@@ -1,0 +1,47 @@
+<div class="brand">
+    <i class="bi bi-boxes me-1"></i> SSM Centring Rentals
+</div>
+<nav class="flex-grow-1 py-2">
+    <div class="nav-section-label">Overview</div>
+    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'rentals:dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    <div class="nav-section-label">Catalog</div>
+    <a class="nav-link" href="/admin/rentals/customer/">
+        <i class="bi bi-people"></i> Customers
+    </a>
+    <a class="nav-link" href="/admin/rentals/material/">
+        <i class="bi bi-boxes"></i> Materials
+    </a>
+    <a class="nav-link" href="/admin/rentals/materialcategory/">
+        <i class="bi bi-tags"></i> Categories
+    </a>
+
+    <div class="nav-section-label">Rentals</div>
+    <a class="nav-link" href="/admin/rentals/rentaltransaction/">
+        <i class="bi bi-arrow-left-right"></i> Rental Transactions
+    </a>
+    <a class="nav-link" href="/admin/rentals/stockmovement/">
+        <i class="bi bi-clipboard-data"></i> Stock Movements
+    </a>
+
+    <div class="nav-section-label">Money</div>
+    <a class="nav-link" href="/admin/rentals/receipt/">
+        <i class="bi bi-cash-coin"></i> Receipts
+    </a>
+    <a class="nav-link" href="/admin/rentals/payment/">
+        <i class="bi bi-wallet2"></i> Payments
+    </a>
+    <a class="nav-link" href="/admin/rentals/productpurchase/">
+        <i class="bi bi-bag-plus"></i> Product Purchases
+    </a>
+    <a class="nav-link" href="/admin/rentals/dailyexpense/">
+        <i class="bi bi-receipt"></i> Daily Expenses
+    </a>
+
+    <div class="nav-section-label">All sections</div>
+    <a class="nav-link {% if request.path == '/manage/' %}active{% endif %}" href="{% url 'rentals:manage' %}">
+        <i class="bi bi-grid-3x3-gap"></i> Manage
+    </a>
+</nav>
