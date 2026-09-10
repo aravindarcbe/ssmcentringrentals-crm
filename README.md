@@ -23,6 +23,11 @@ Then open:
 - **`http://127.0.0.1:8000/`** — the dashboard
 - **`http://127.0.0.1:8000/admin/`** — CRUD screens for Customers, Materials, Rental transactions (with material lines, deposit, and receipts inline), Payments, Product purchases, and Daily expenses
 
-To load some sample data for the dashboard to show something: `python manage.py shell < seed_demo_data.py` (from inside `webapp/`, with the virtual environment active).
+To see the app with data instead of an empty database, you have two options (from inside `webapp/`, with the virtual environment active):
+
+- **Real data from the owner's Excel tracker:** `python manage.py shell < import_excel_data.py` — imports customers, rental transactions, receipts, payments, purchases, and expenses from `docs/source-data/SSMSALES_and_EXPENSES.xlsx`. See the notes at the top of that script for its matching limitations (it's a best-effort import of a manually-kept spreadsheet, not a lossless migration).
+- **Made-up sample data:** `python manage.py shell < seed_demo_data.py`
+
+Run only one of these against a fresh database (delete `webapp/db.sqlite3` first if you want to switch or re-run).
 
 To view it from your phone on the same WiFi, run `python manage.py runserver 0.0.0.0:8000` instead and open `http://<your-computer-IP>:8000` from the phone.
