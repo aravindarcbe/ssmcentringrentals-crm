@@ -25,8 +25,8 @@ Then open:
 
 To see the app with data instead of an empty database, you have two options (from inside `webapp/`, with the virtual environment active):
 
-- **Real data from the owner's Excel tracker:** `python manage.py shell < import_excel_data.py` — imports customers, rental transactions, receipts, payments, purchases, and expenses from `docs/source-data/SSMSALES_and_EXPENSES.xlsx`. See the notes at the top of that script for its matching limitations (it's a best-effort import of a manually-kept spreadsheet, not a lossless migration).
-- **Made-up sample data:** `python manage.py shell < seed_demo_data.py`
+- **Real data from the owner's Excel tracker:** `python manage.py import_excel_data` — imports customers, rental transactions, receipts, payments, purchases, and expenses from `docs/source-data/SSMSALES_and_EXPENSES.xlsx`. See the notes at the top of `rentals/management/commands/import_excel_data.py` for its matching limitations (it's a best-effort import of a manually-kept spreadsheet, not a lossless migration).
+- **Made-up sample data:** `python manage.py seed_demo_data`
 
 Run only one of these against a fresh database (delete `webapp/db.sqlite3` first if you want to switch or re-run).
 
