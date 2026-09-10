@@ -1,56 +1,74 @@
 {% extends "base.html" %}
 {% load currency_filters %}
 {% block title %}Dashboard - SSM Centring Rentals{% endblock %}
+{% block page_title %}Dashboard — {{ month_label }}{% endblock %}
 {% block content %}
 
-<h3 class="mb-3">Dashboard — {{ month_label }}</h3>
-
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card text-bg-success h-100">
-            <div class="card-body">
-                <div class="small">Cash received this month</div>
-                <div class="fs-4">₹{{ cash_in|money }}</div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 text-success p-2"><i class="bi bi-arrow-down-circle fs-4"></i></div>
+                <div>
+                    <div class="text-muted small">Cash received</div>
+                    <div class="fs-4 fw-semibold">₹{{ cash_in|money }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">this month</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-bg-danger h-100">
-            <div class="card-body">
-                <div class="small">Cash paid out this month</div>
-                <div class="fs-4">₹{{ cash_out|money }}</div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 text-danger p-2"><i class="bi bi-arrow-up-circle fs-4"></i></div>
+                <div>
+                    <div class="text-muted small">Cash paid out</div>
+                    <div class="fs-4 fw-semibold">₹{{ cash_out|money }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">this month</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-bg-warning h-100">
-            <div class="card-body">
-                <div class="small">Deposits currently held</div>
-                <div class="fs-4">₹{{ deposits_held|money }}</div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 text-warning p-2"><i class="bi bi-shield-lock fs-4"></i></div>
+                <div>
+                    <div class="text-muted small">Deposits held</div>
+                    <div class="fs-4 fw-semibold">₹{{ deposits_held|money }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">across all customers</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="card text-bg-info h-100">
-            <div class="card-body">
-                <div class="small">Pending from customers</div>
-                <div class="fs-4">₹{{ pending_from_customers|money }}</div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body d-flex align-items-start gap-3">
+                <div class="rounded-circle bg-info bg-opacity-10 text-info p-2"><i class="bi bi-hourglass-split fs-4"></i></div>
+                <div>
+                    <div class="text-muted small">Pending from customers</div>
+                    <div class="fs-4 fw-semibold">₹{{ pending_from_customers|money }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">open transactions</div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 {% if refunds_owed_to_customers %}
-<div class="alert alert-secondary">Refunds owed to customers on open transactions: <strong>₹{{ refunds_owed_to_customers|money }}</strong></div>
+<div class="alert alert-secondary d-flex align-items-center gap-2">
+    <i class="bi bi-info-circle"></i>
+    Refunds owed to customers on open transactions: <strong>₹{{ refunds_owed_to_customers|money }}</strong>
+</div>
 {% endif %}
 
 <div class="row g-4">
-    <div class="col-md-7">
+    <div class="col-lg-7">
         <div class="card">
-            <div class="card-header">Recent rental transactions</div>
+            <div class="card-header bg-white fw-semibold">Recent rental transactions</div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                    <thead>
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
                         <tr><th>Invoice</th><th>Customer</th><th>Date out</th><th>Status</th><th>Bill</th></tr>
                     </thead>
                     <tbody>
@@ -59,23 +77,31 @@
                             <td>{{ t.invoice_number }}</td>
                             <td>{{ t.customer.name }}</td>
                             <td>{{ t.date_out }}</td>
-                            <td>{{ t.get_status_display }}</td>
+                            <td>
+                                {% if t.status == "CLOSED" %}
+                                <span class="badge text-bg-success">{{ t.get_status_display }}</span>
+                                {% elif t.status == "PARTIALLY_RETURNED" %}
+                                <span class="badge text-bg-warning">{{ t.get_status_display }}</span>
+                                {% else %}
+                                <span class="badge text-bg-secondary">{{ t.get_status_display }}</span>
+                                {% endif %}
+                            </td>
                             <td>₹{{ t.total_bill_amount|money }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="text-center text-muted py-3">No rental transactions yet.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No rental transactions yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="col-md-5">
+    <div class="col-lg-5">
         <div class="card">
-            <div class="card-header">Low stock materials</div>
+            <div class="card-header bg-white fw-semibold">Low stock materials</div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                    <thead>
+                <table class="table table-sm mb-0 align-middle">
+                    <thead class="table-light">
                         <tr><th>Material</th><th>Available</th><th>Total</th></tr>
                     </thead>
                     <tbody>
@@ -86,7 +112,7 @@
                             <td>{{ m.total_stock_count }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" class="text-center text-muted py-3">No low-stock materials.</td></tr>
+                        <tr><td colspan="3" class="text-center text-muted py-4">No low-stock materials.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
