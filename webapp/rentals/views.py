@@ -37,9 +37,9 @@ def dashboard(request):
         (t.net_position for t in open_transactions if t.net_position > 0), start=0
     )
 
-    low_stock_materials = Material.objects.filter(available_count__lte=F("total_stock_count") * 0.1).order_by(
-        "available_count"
-    )[:10]
+    low_stock_materials = Material.objects.filter(
+        total_stock_count__gt=0, available_count__lte=F("total_stock_count") * 0.1
+    ).order_by("available_count")[:10]
 
     recent_transactions = RentalTransaction.objects.select_related("customer").order_by("-date_out", "-id")[:10]
 
