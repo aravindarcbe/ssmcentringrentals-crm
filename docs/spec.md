@@ -1,6 +1,6 @@
 # SSM Centring Rentals — CRM Specification
 
-Status: **Draft v1** — approved tech stack, ready for implementation planning.
+Status: **Draft v1** — approved tech stack and release roadmap, ready for implementation planning.
 Source of truth for business data: [`source-data/SSMSALES_and_EXPENSES.xlsx`](./source-data/SSMSALES_and_EXPENSES.xlsx) (the owner's existing manual tracker, kept in this repo for reference — do not edit it; it documents the real-world workflow this CRM replaces).
 
 ## 1. Business context
@@ -147,7 +147,17 @@ net_position = deposit_ledger.amount_collected - transaction.final_bill - discou
 
 No other AWS services (RDS, Lambda, DynamoDB, Amplify, Cognito) are required for this stack, so there is exactly one recurring line item to budget for.
 
-## 8. Open questions to confirm with the owner during build
+## 8. Release roadmap
+
+| Release | Scope |
+|---|---|
+| **1.0** | Responsive web app — all modules in §4 (materials, customers, rentals with advance/return billing, receipts, payments, purchases, expenses, dashboard), accessible via phone/desktop browser on the single-EC2 deployment described in §6. No native app, no offline support. |
+| **2.0** | Scoped later based on real usage after 1.0 is live (candidates: reports/exports, multi-user roles, notifications/reminders for pending returns — to be prioritized against actual pain points once the owner is using it day-to-day). |
+| **3.0** | PWA layer — add web app manifest + service worker to the existing 1.0 app so it installs to the home screen on iPhone and Android and caches pages for offline viewing (see limitations noted for iOS Safari: manual "Add to Home Screen," no background sync, push notifications need iOS 16.4+). No separate codebase, no app store listing, no added hosting cost — purely additive to the 1.0 app. |
+
+This sequencing is sound: 1.0 gets the actual workflow (advance/return billing, expense tracking) in front of the owner fastest without extra layers, 2.0 stays flexible for whatever 1.0 usage reveals, and 3.0's PWA work is cheap to bolt on later since it doesn't touch the backend or data model at all.
+
+## 9. Open questions to confirm with the owner during build
 
 - Exact billing formula for partial-day / multi-day rentals (does `Days` multiply into the bill amount, or is the rate already a flat period rate as in the sample sheet?).
 - Whether discounts apply per line item or per whole transaction.
