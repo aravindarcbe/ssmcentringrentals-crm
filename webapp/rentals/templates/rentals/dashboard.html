@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - SSM Centring Rentals{% endblock %}
+{% block content %}
+
+<h3 class="mb-3">Dashboard — {{ month_label }}</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-success h-100">
+            <div class="card-body">
+                <div class="small">Cash received this month</div>
+                <div class="fs-4">₹{{ cash_in }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-danger h-100">
+            <div class="card-body">
+                <div class="small">Cash paid out this month</div>
+                <div class="fs-4">₹{{ cash_out }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-warning h-100">
+            <div class="card-body">
+                <div class="small">Deposits currently held</div>
+                <div class="fs-4">₹{{ deposits_held }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-info h-100">
+            <div class="card-body">
+                <div class="small">Pending from customers</div>
+                <div class="fs-4">₹{{ pending_from_customers }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if refunds_owed_to_customers %}
+<div class="alert alert-secondary">Refunds owed to customers on open transactions: <strong>₹{{ refunds_owed_to_customers }}</strong></div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">Recent rental transactions</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Invoice</th><th>Customer</th><th>Date out</th><th>Status</th><th>Bill</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        <tr>
+                            <td>{{ t.invoice_number }}</td>
+                            <td>{{ t.customer.name }}</td>
+                            <td>{{ t.date_out }}</td>
+                            <td>{{ t.get_status_display }}</td>
+                            <td>₹{{ t.total_bill_amount }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">No rental transactions yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">Low stock materials</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Material</th><th>Available</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for m in low_stock_materials %}
+                        <tr>
+                            <td>{{ m }}</td>
+                            <td>{{ m.available_count }}</td>
+                            <td>{{ m.total_stock_count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">No low-stock materials.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
