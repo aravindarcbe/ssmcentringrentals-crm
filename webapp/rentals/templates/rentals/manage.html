@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Manage - SSM Centring Rentals{% endblock %}
+{% block content %}
+
+<h3 class="mb-4">Manage</h3>
+
+<div class="row g-4">
+    {% for section in sections %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ section.title }}</h5>
+                <p class="card-text text-muted small">{{ section.description }}</p>
+                <div class="list-group">
+                    {% for label, url in section.links %}
+                    <a href="{{ url }}" class="list-group-item list-group-item-action">{{ label }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

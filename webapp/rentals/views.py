@@ -1,5 +1,6 @@
 from datetime import date
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum, F
 from django.shortcuts import render
 
@@ -54,3 +55,45 @@ def dashboard(request):
         "month_label": month_start.strftime("%B %Y"),
     }
     return render(request, "rentals/dashboard.html", context)
+
+
+MANAGE_SECTIONS = [
+    {
+        "title": "Customers",
+        "description": "Names, phone numbers, and addresses.",
+        "links": [("Customers", "/admin/rentals/customer/")],
+    },
+    {
+        "title": "Materials & Stock",
+        "description": "What you rent out, and how much of it you have.",
+        "links": [
+            ("Materials", "/admin/rentals/material/"),
+            ("Material categories", "/admin/rentals/materialcategory/"),
+            ("Stock movements", "/admin/rentals/stockmovement/"),
+        ],
+    },
+    {
+        "title": "Rentals & Returns",
+        "description": "Rent out material (bill on advance) and process returns (bill on return).",
+        "links": [("Rental transactions", "/admin/rentals/rentaltransaction/")],
+    },
+    {
+        "title": "Money In",
+        "description": "Payments received from customers against a rental.",
+        "links": [("Receipts", "/admin/rentals/receipt/")],
+    },
+    {
+        "title": "Money Out",
+        "description": "Salary, loans, stock purchases, and day-to-day expenses.",
+        "links": [
+            ("Payments", "/admin/rentals/payment/"),
+            ("Product purchases", "/admin/rentals/productpurchase/"),
+            ("Daily expenses", "/admin/rentals/dailyexpense/"),
+        ],
+    },
+]
+
+
+@staff_member_required
+def manage_home(request):
+    return render(request, "rentals/manage.html", {"sections": MANAGE_SECTIONS})
