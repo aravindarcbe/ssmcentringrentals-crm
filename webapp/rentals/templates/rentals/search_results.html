@@ -6,7 +6,7 @@
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card h-100">
-            <div class="card-header bg-white fw-semibold">Customers</div>
+            <div class="card-header">Customers</div>
             <div class="list-group list-group-flush">
                 {% for c in customers %}
                 <a href="/admin/rentals/customer/{{ c.pk }}/change/" class="list-group-item list-group-item-action">
@@ -20,7 +20,7 @@
     </div>
     <div class="col-lg-4">
         <div class="card h-100">
-            <div class="card-header bg-white fw-semibold">Rental transactions</div>
+            <div class="card-header">Rental transactions</div>
             <div class="list-group list-group-flush">
                 {% for t in transactions %}
                 <a href="{% url 'rentals:rental_detail' t.pk %}" class="list-group-item list-group-item-action">
@@ -34,7 +34,7 @@
     </div>
     <div class="col-lg-4">
         <div class="card h-100">
-            <div class="card-header bg-white fw-semibold">Materials</div>
+            <div class="card-header">Materials</div>
             <div class="list-group list-group-flush">
                 {% for m in materials %}
                 <a href="/admin/rentals/material/{{ m.pk }}/change/" class="list-group-item list-group-item-action">
