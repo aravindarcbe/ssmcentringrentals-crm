@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import RentalTransactionForm, RentalLineItemFormSet
 from .models import (
+    Customer,
     Material,
     RentalTransaction,
     RentalLineItem,
@@ -266,3 +267,22 @@ def rental_return(request, pk):
         return redirect("rentals:rental_detail", pk=transaction.pk)
 
     return render(request, "rentals/rental_return.html", {"t": transaction, "line_items": line_items})
+
+
+@staff_member_required
+def global_search(request):
+    query = (request.GET.get("q") or "").strip()
+    customers = Customer.objects.none()
+    transactions = RentalTransaction.objects.none()
+    materials = Material.objects.none()
+    if query:
+        customers = Customer.objects.filter(name__icontains=query) | Customer.objects.filter(phone__icontains=query)
+        transactions = RentalTransaction.objects.select_related("customer").filter(
+            invoice_number__icontains=query
+        ) | RentalTransaction.objects.select_related("customer").filter(customer__name__icontains=query)
+        materials = Material.objects.select_related("category").filter(size_label__icontains=query)
+    return render(
+        request,
+        "rentals/search_results.html",
+        {"query": query, "customers": customers[:20], "transactions": transactions.distinct()[:20], "materials": materials[:20]},
+    )

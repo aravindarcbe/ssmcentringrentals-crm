@@ -21,12 +21,17 @@
             --border: #eaecf2;
             --text: #1c1f2e;
             --text-muted: #6b7086;
+            --sidebar-width: 252px;
+            --sidebar-width-collapsed: 76px;
         }
         * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: var(--text); }
         .app-shell { display: flex; min-height: 100vh; }
 
-        .sidebar { width: 252px; flex-shrink: 0; background: var(--sidebar-bg); color: var(--sidebar-text); }
+        .sidebar {
+            width: var(--sidebar-width); flex-shrink: 0; background: var(--sidebar-bg); color: var(--sidebar-text);
+            transition: width 0.18s ease;
+        }
         .sidebar .brand { color: #fff; padding: 1.25rem 1.25rem; display: flex; align-items: center; gap: 0.7rem; }
         .sidebar .brand-logo {
             width: 34px; height: 34px; border-radius: 0.55rem;
@@ -35,31 +40,54 @@
             box-shadow: 0 4px 10px rgba(91,95,239,0.35);
         }
         .sidebar .brand-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 0.55rem; }
-        .sidebar .brand-name { font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; }
+        .sidebar .brand-name { font-weight: 600; font-size: 0.95rem; letter-spacing: -0.01em; white-space: nowrap; }
         .sidebar .nav-section-label {
             text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.08em;
-            color: #565c78; padding: 1.1rem 1.25rem 0.4rem; font-weight: 600;
+            color: #565c78; padding: 1.1rem 1.25rem 0.4rem; font-weight: 600; white-space: nowrap;
         }
         .sidebar .nav-link {
             color: var(--sidebar-text); padding: 0.55rem 1rem; margin: 0.1rem 0.75rem;
             font-size: 0.89rem; font-weight: 500; border-radius: 0.5rem;
-            display: flex; align-items: center; gap: 0.65rem;
+            display: flex; align-items: center; gap: 0.65rem; white-space: nowrap; overflow: hidden;
             transition: background 0.15s ease, color 0.15s ease;
         }
-        .sidebar .nav-link i { font-size: 0.95rem; width: 18px; text-align: center; }
+        .sidebar .nav-link i { font-size: 0.95rem; width: 18px; text-align: center; flex-shrink: 0; }
         .sidebar .nav-link:hover { background: rgba(255,255,255,0.06); color: #fff; }
         .sidebar .nav-link.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); }
 
+        .sidebar.sidebar-collapsed { width: var(--sidebar-width-collapsed); }
+        .sidebar.sidebar-collapsed .brand { justify-content: center; padding: 1.25rem 0.5rem; }
+        .sidebar.sidebar-collapsed .brand-name,
+        .sidebar.sidebar-collapsed .nav-section-label,
+        .sidebar.sidebar-collapsed .nav-label { display: none; }
+        .sidebar.sidebar-collapsed .nav-link { justify-content: center; margin: 0.15rem 0.6rem; padding: 0.6rem; }
+        .sidebar.sidebar-collapsed #sidebar-collapse-toggle i { transform: rotate(180deg); }
+
+        #sidebar-collapse-toggle {
+            color: var(--sidebar-text); padding: 0.65rem; margin: 0.4rem 0.75rem 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        #sidebar-collapse-toggle:hover { color: #fff; }
+
         .topbar {
             background: #fff; border-bottom: 1px solid var(--border);
-            padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+            padding: 0.7rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
         }
-        .topbar .page-title { font-weight: 600; font-size: 1.05rem; letter-spacing: -0.01em; }
+        .topbar .page-title { font-weight: 600; font-size: 1.05rem; letter-spacing: -0.01em; white-space: nowrap; }
+        .topbar-search { flex: 1; max-width: 420px; }
+        .topbar-search input {
+            border-radius: 2rem; border: 1px solid var(--border); background: var(--bg);
+            padding: 0.45rem 1rem 0.45rem 2.25rem; font-size: 0.85rem; width: 100%;
+        }
+        .topbar-search input:focus { background: #fff; box-shadow: 0 0 0 3px rgba(91,95,239,0.15); border-color: var(--accent); outline: none; }
+        .topbar-search-wrap { position: relative; }
+        .topbar-search-wrap i { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; }
+
         .user-avatar {
             width: 34px; height: 34px; border-radius: 50%;
             background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             color: #fff; font-weight: 600; font-size: 0.8rem;
-            display: flex; align-items: center; justify-content: center;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .main-content { flex: 1; min-width: 0; }
 
@@ -84,13 +112,20 @@
 
         @media (max-width: 991.98px) {
             .sidebar-desktop { display: none !important; }
+            .topbar-search { max-width: 220px; }
+        }
+        @media (max-width: 575.98px) {
+            .topbar-search { display: none; }
         }
     </style>
 </head>
 <body>
     <div class="app-shell">
-        <div class="sidebar sidebar-desktop d-flex flex-column">
+        <div class="sidebar sidebar-desktop d-flex flex-column" id="mainSidebar">
             {% include "rentals/_sidebar_nav.html" %}
+            <button type="button" id="sidebar-collapse-toggle" class="btn btn-sm d-flex align-items-center gap-2 border-0 bg-transparent">
+                <i class="bi bi-chevron-double-left"></i> <span class="nav-label">Collapse</span>
+            </button>
         </div>
 
         <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" style="background: var(--sidebar-bg); width: 252px;">
@@ -101,12 +136,18 @@
 
         <div class="main-content d-flex flex-column">
             <div class="topbar">
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3" style="min-width:0;">
                     <button class="btn btn-sm btn-outline-secondary d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas">
                         <i class="bi bi-list"></i>
                     </button>
-                    <span class="page-title">{% block page_title %}{% endblock %}</span>
+                    <span class="page-title text-truncate">{% block page_title %}{% endblock %}</span>
                 </div>
+                <form class="topbar-search d-none d-sm-block" action="{% url 'rentals:search' %}" method="get">
+                    <div class="topbar-search-wrap">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="q" class="form-control" placeholder="Search customers, invoices, materials…">
+                    </div>
+                </form>
                 {% if request.user.is_authenticated %}
                 <div class="dropdown">
                     <button class="btn d-flex align-items-center gap-2 p-0 border-0 bg-transparent" type="button" data-bs-toggle="dropdown">
@@ -136,5 +177,19 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            var sidebar = document.getElementById('mainSidebar');
+            var toggle = document.getElementById('sidebar-collapse-toggle');
+            if (!sidebar || !toggle) return;
+            if (localStorage.getItem('sidebarCollapsed') === '1') {
+                sidebar.classList.add('sidebar-collapsed');
+            }
+            toggle.addEventListener('click', function () {
+                sidebar.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed') ? '1' : '0');
+            });
+        })();
+    </script>
 </body>
 </html>
