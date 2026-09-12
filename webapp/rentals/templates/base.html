@@ -110,7 +110,14 @@
 
         .btn-primary { background: var(--ink); border-color: var(--ink); }
         .btn-primary:hover { background: #000; border-color: #000; }
-        .btn { border-radius: 0.4rem; font-weight: 500; font-size: 0.85rem; }
+        .btn {
+            border-radius: 0.4rem; font-weight: 500; font-size: 0.85rem;
+            transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+        }
+        .btn:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+        .btn:active { transform: scale(0.97); box-shadow: none; }
+        .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .list-group-item-action { transition: background-color 0.1s ease; }
 
         .table thead th {
             text-transform: uppercase; font-size: 0.68rem; letter-spacing: 0.03em;
@@ -124,6 +131,11 @@
         .pill-warning { background: #fdf1d3; color: #915800; }
         .pill-secondary { background: #eceef0; color: #55585c; }
         .pill-info { background: #dceefa; color: #0b5d8a; }
+
+        /* Semantic money coloring: green = received/in hand/favorable, red = owed out/outstanding/needs attention */
+        .money-positive { color: #0e6245; font-weight: 600; }
+        .money-negative { color: #a41c1c; font-weight: 600; }
+        .money-neutral { color: var(--ink); font-weight: 600; }
 
         a { color: var(--accent); text-decoration: none; }
         a:hover { color: #1d4f96; }
