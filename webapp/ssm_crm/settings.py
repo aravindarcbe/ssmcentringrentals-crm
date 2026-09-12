@@ -51,11 +51,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django.contrib.sites",
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",
     "rentals",
 ]
 
@@ -67,43 +62,14 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
 ]
-
-SITE_ID = 1
-
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend",
-]
-
-# Google sign-in: create credentials at https://console.cloud.google.com/ (OAuth client ID,
-# type "Web application"), add authorized redirect URI
-# http://127.0.0.1:8000/accounts/google/login/callback/ for local dev, then set these two
-# values in webapp/.env. Google login stays a no-op until both are set.
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID", ""),
-            "secret": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
-            "key": "",
-        },
-        "SCOPE": ["profile", "email"],
-    }
-}
-
-# New accounts created via Google sign-in have no admin access by default (is_staff=False) -
-# an existing admin must grant staff/superuser status via Users in the admin site.
-ACCOUNT_EMAIL_VERIFICATION = "none"
-LOGIN_REDIRECT_URL = "/"
-SOCIALACCOUNT_AUTO_SIGNUP = True
 
 ROOT_URLCONF = "ssm_crm.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
