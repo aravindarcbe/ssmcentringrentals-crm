@@ -1,5 +1,9 @@
+{% load static text_filters %}
 <div class="brand">
-    <i class="bi bi-boxes me-1"></i> SSM Centring Rentals
+    {# Once you have a real logo image, drop it at rentals/static/rentals/img/logo.png and replace the div below with: #}
+    {# <div class="brand-logo"><img src="{% static 'rentals/img/logo.png' %}" alt="{{ company_name }}"></div> #}
+    <div class="brand-logo">{{ company_name|initials }}</div>
+    <div class="brand-name">{{ company_name }}</div>
 </div>
 <nav class="flex-grow-1 py-2">
     <div class="nav-section-label">Overview</div>

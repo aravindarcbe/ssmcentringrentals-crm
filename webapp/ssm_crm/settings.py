@@ -32,6 +32,10 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 
+# Shown in the sidebar, browser tab title, and admin site header.
+# Change via .env (COMPANY_NAME=Your Company Name) rather than editing here.
+COMPANY_NAME = os.environ.get("COMPANY_NAME", "SSM Centring Rentals")
+
 
 # Application definition
 
@@ -67,6 +71,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "rentals.context_processors.branding",
             ],
         },
     },
