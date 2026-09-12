@@ -74,7 +74,7 @@
                     <tbody>
                         {% for t in recent_transactions %}
                         <tr>
-                            <td>{{ t.invoice_number }}</td>
+                            <td><a href="{% url 'rentals:rental_detail' t.pk %}">{{ t.invoice_number }}</a></td>
                             <td>{{ t.customer.name }}</td>
                             <td>{{ t.date_out }}</td>
                             <td>

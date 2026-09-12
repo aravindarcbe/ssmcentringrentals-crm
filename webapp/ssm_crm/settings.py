@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from django.contrib.messages import constants as message_constants
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,6 +36,10 @@ ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "loca
 # Shown in the sidebar, browser tab title, and admin site header.
 # Change via .env (COMPANY_NAME=Your Company Name) rather than editing here.
 COMPANY_NAME = os.environ.get("COMPANY_NAME", "SSM Centring Rentals")
+
+MESSAGE_TAGS = {
+    message_constants.ERROR: "danger",
+}
 
 
 # Application definition

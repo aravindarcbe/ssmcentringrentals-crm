@@ -1,8 +1,8 @@
 {% load static text_filters %}
 <div class="brand">
-    {# Once you have a real logo image, drop it at rentals/static/rentals/img/logo.png and replace the div below with: #}
-    {# <div class="brand-logo"><img src="{% static 'rentals/img/logo.png' %}" alt="{{ company_name }}"></div> #}
-    <div class="brand-logo">{{ company_name|initials }}</div>
+    {# Placeholder logo icon (rentals/static/rentals/img/logo.svg) - swap that file for a real #}
+    {# logo any time; the name text stays separate and comes from the COMPANY_NAME setting. #}
+    <div class="brand-logo"><img src="{% static 'rentals/img/logo.svg' %}" alt="{{ company_name }} logo"></div>
     <div class="brand-name">{{ company_name }}</div>
 </div>
 <nav class="flex-grow-1 py-2">
@@ -23,6 +23,9 @@
     </a>
 
     <div class="nav-section-label">Rentals</div>
+    <a class="nav-link {% if request.path == '/rentals/new/' %}active{% endif %}" href="{% url 'rentals:rental_new' %}">
+        <i class="bi bi-plus-circle"></i> New Rental
+    </a>
     <a class="nav-link" href="/admin/rentals/rentaltransaction/">
         <i class="bi bi-arrow-left-right"></i> Rental Transactions
     </a>

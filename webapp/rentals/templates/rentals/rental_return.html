@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load currency_filters %}
+{% block title %}Process Return - {{ t.invoice_number }}{% endblock %}
+{% block page_title %}Process Return — {{ t.invoice_number }}{% endblock %}
+{% block content %}
+
+<form method="post">
+    {% csrf_token %}
+    <div class="card mb-4">
+        <div class="card-header bg-white fw-semibold">{{ t.customer.name }} — mark quantities returned</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Material</th><th>Rented</th><th>Already returned</th><th style="width:160px">Return now (total)</th><th style="width:160px">Return date</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in line_items %}
+                    <tr>
+                        <td>{{ item.material }}</td>
+                        <td>{{ item.count }}</td>
+                        <td>{{ item.count_returned }}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" name="return_count_{{ item.id }}"
+                                   min="{{ item.count_returned }}" max="{{ item.count }}" value="{{ item.count }}">
+                        </td>
+                        <td>
+                            <input type="date" class="form-control form-control-sm" name="return_date_{{ item.id }}" value="{% now 'Y-m-d' %}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer bg-white text-muted small">
+            "Return now (total)" is the total returned so far including previous returns — leave as-is for items not returning today.
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-white fw-semibold">Settle deposit</div>
+        <div class="card-body">
+            <p class="mb-3">
+                Total bill: <strong>₹{{ t.total_bill_amount|money }}</strong> &middot;
+                Deposit held: <strong>₹{{ t.total_deposit_collected|money }} − {{ t.total_deposit_refunded|money }} refunded</strong>
+            </p>
+            {% if t.net_position > 0 %}
+            <div class="alert alert-warning">Refund currently due to customer: <strong>₹{{ t.net_position|money }}</strong></div>
+            <label class="form-label small text-muted">Refund amount to record now</label>
+            <input type="number" step="0.01" min="0" name="refund_amount" class="form-control" style="max-width:220px" placeholder="0.00">
+            {% elif t.net_position < 0 %}
+            <div class="alert alert-info">Balance currently due from customer: <strong>₹{{ t.net_position|abs|money }}</strong></div>
+            <label class="form-label small text-muted">Additional payment received now</label>
+            <input type="number" step="0.01" min="0" name="extra_receipt_amount" class="form-control" style="max-width:220px" placeholder="0.00">
+            {% else %}
+            <div class="alert alert-success mb-0">Settled — nothing owed either way.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save return</button>
+    <a href="{% url 'rentals:rental_detail' t.pk %}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+
+{% endblock %}
