@@ -9,7 +9,7 @@
         <div class="stat-card card h-100">
             <div class="card-body">
                 <div class="stat-label">Cash received</div>
-                <div class="stat-value">₹{{ cash_in|money }}</div>
+                <div class="stat-value money-positive">₹{{ cash_in|money }}</div>
                 <div class="stat-sub">{{ month_label }}</div>
             </div>
         </div>
@@ -18,7 +18,7 @@
         <div class="stat-card card h-100">
             <div class="card-body">
                 <div class="stat-label">Cash paid out</div>
-                <div class="stat-value">₹{{ cash_out|money }}</div>
+                <div class="stat-value money-negative">₹{{ cash_out|money }}</div>
                 <div class="stat-sub">{{ month_label }}</div>
             </div>
         </div>
@@ -36,7 +36,7 @@
         <div class="stat-card card h-100">
             <div class="card-body">
                 <div class="stat-label">Pending from customers</div>
-                <div class="stat-value">₹{{ pending_from_customers|money }}</div>
+                <div class="stat-value money-negative">₹{{ pending_from_customers|money }}</div>
                 <div class="stat-sub">open transactions</div>
             </div>
         </div>
@@ -44,8 +44,8 @@
 </div>
 
 {% if refunds_owed_to_customers %}
-<div class="alert alert-secondary d-flex align-items-center gap-2">
-    <i class="bi bi-info-circle"></i>
+<div class="alert alert-danger d-flex align-items-center gap-2">
+    <i class="bi bi-exclamation-circle"></i>
     Refunds owed to customers on open transactions: <strong>₹{{ refunds_owed_to_customers|money }}</strong>
 </div>
 {% endif %}
