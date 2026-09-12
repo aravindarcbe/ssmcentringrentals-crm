@@ -1,6 +1,6 @@
 # SSM Centring Rentals — CRM Specification
 
-Status: **Draft v1** — approved tech stack and release roadmap, ready for implementation planning.
+Status: **1.0 in active development** — core data model, admin CRUD, dedicated rent-out/return screens, dashboard, search, and UI are built and running on `main`. See §10 for the up-to-date implementation status.
 Source of truth for business data: [`source-data/SSMSALES_and_EXPENSES.xlsx`](./source-data/SSMSALES_and_EXPENSES.xlsx) (the owner's existing manual tracker, kept in this repo for reference — do not edit it; it documents the real-world workflow this CRM replaces).
 
 ## 1. Business context
@@ -39,7 +39,7 @@ SSM rents out centring/shuttering equipment (jockeys, sheets, spans, runners, wo
 |---|---|---|
 | Backend + Admin CRUD | **Django** (Python) + Django admin | Most of this app is tabular data entry (materials, customers, expenses) — Django admin gives working CRUD screens for free; custom views/templates only needed for the rental → return billing workflow and the dashboard. |
 | Database | **PostgreSQL**, self-hosted on the same EC2 instance | Relational schema matches the sheets naturally (customers, transactions, line items, ledgers with foreign keys). Self-hosting avoids RDS's 12-month free-tier expiry. |
-| Frontend | Django templates + Bootstrap (server-rendered), minimal JS (Alpine.js or vanilla) for the multi-line-item invoice form | No SPA build pipeline needed; keeps the single-EC2 deploy simple. Can be revisited later if a richer UI is wanted. |
+| Frontend | Django templates + Bootstrap 5 (server-rendered), vanilla JS for the multi-line-item invoice form (dynamic row add via a small script, no framework) | No SPA build pipeline needed; keeps the single-EC2 deploy simple. |
 | Hosting | **One AWS EC2 instance** (t3.micro or t4g.micro), Nginx + Gunicorn + Postgres all on the same box | Free for 12 months under AWS Free Tier (750 hrs/month); after that, ~$6-9/month total — the only ongoing cost, no separate DB bill. |
 | Static/media files | Served by Nginx from local disk (or optionally S3 free tier — 5GB — later if needed) | Keeps everything on one box for now; low traffic doesn't need CDN. |
 | Backups | Nightly `pg_dump` cron job, rotated locally + optionally pushed to S3 free tier (5GB) | Cheap insurance against instance loss. |
@@ -89,33 +89,33 @@ StockMovement              (audit trail: rented out / returned, drives available
   id, material (FK), transaction (FK), direction [OUT, IN], count, date
 ```
 
-### 3.1 Return / refund calculation
+### 3.1 Return / refund calculation (as implemented)
 
-On return of a `RentalLineItem`:
+Resolved during implementation (was an open question in earlier drafts): the bill amount is **fixed at rental-creation time** and does not change on return — matching the source sheet's own convention (`Bill amount = Ft × Rate`, not multiplied by days). `days_estimated` is stored for reference but is not part of the formula:
 
 ```
-actual_days = date_returned - date_out
-final_line_amount = count_returned * ft_value * rate * actual_days_factor   # matches existing sheet convention
-transaction.final_bill = sum(final_line_amount for all line items)
-net_position = deposit_ledger.amount_collected - transaction.final_bill - discount
-  if net_position > 0: refund_to_customer = net_position
-  if net_position < 0: balance_due_from_customer = abs(net_position)
+RentalLineItem.line_amount = material.ft_value * rate * count      # fixed once the line item is created
+transaction.total_bill_amount = sum(line.line_amount for line in transaction.line_items)
+transaction.net_position = (deposit_collected - deposit_refunded) - total_bill_amount - discount
+  net_position > 0  -> refund due TO the customer
+  net_position < 0  -> balance due FROM the customer
+  net_position == 0 -> settled
 ```
 
-(Exact multiplication convention — whether `days` factors into the line amount or is informational only — will be confirmed against how the owner actually bills, since the sample sheet uses `Ft × Rate` per line without always multiplying by days. This is a decision to confirm during implementation, not a schema change.)
+Processing a return only updates `count_returned` / `date_returned` per line item (driving `RentalTransaction.status`: OPEN → PARTIALLY_RETURNED → CLOSED) and restocks `Material.available_count` via a `StockMovement` — it does not recompute the bill. Discount applies once per whole transaction (a single field on `RentalTransaction`), not per line item — this was also an open question, now resolved the same way.
 
 ## 4. Screens / modules
 
-1. **Dashboard** — total cash in / out this month, open pending amounts, deposits currently held, low-stock alerts, recent transactions.
-2. **Materials** — list/add/edit categories and sizes, stock counts, default rates.
-3. **Customers** — list/add/edit customer details.
-4. **New Rental (bill on advance)** — pick customer, add material lines, capture advance received, generate invoice number.
-5. **Rental detail / Return (bill on return)** — view a transaction, mark items returned, system computes final bill and refund/balance due, record the settling receipt or refund payment.
-6. **Receipts** — list of all money received, filterable by customer/date/mode.
-7. **Payments** — outgoing payments log.
-8. **Product Purchases** — stock buy-in log.
-9. **Daily Expenses** — operating expense log.
-10. **Reports** — pending amounts by customer, deposits held, monthly cash flow, expense category breakdown.
+1. **Dashboard** ✅ built — total cash in / out this month, open pending amounts, deposits currently held, low-stock alerts, recent transactions.
+2. **Materials** ✅ built (via Django admin) — list/add/edit categories and sizes, stock counts, default rates.
+3. **Customers** ✅ built (via Django admin) — list/add/edit customer details.
+4. **New Rental (bill on advance)** ✅ built as a dedicated screen — pick customer, add material lines, capture advance received, generate invoice number.
+5. **Rental detail / Return (bill on return)** ✅ built as dedicated screens — view a transaction, mark items returned, system computes final bill and refund/balance due, record the settling receipt or refund payment.
+6. **Receipts** ✅ built (via Django admin) — list of all money received; filtering by mode is available, filtering by customer/date not yet added.
+7. **Payments** ✅ built (via Django admin) — outgoing payments log.
+8. **Product Purchases** ✅ built (via Django admin) — stock buy-in log.
+9. **Daily Expenses** ✅ built (via Django admin) — operating expense log.
+10. **Reports** ⬜ not built — pending amounts by customer, deposits held, monthly cash flow, expense category breakdown. (Global search across customers/invoices/materials exists as a related but separate feature.)
 
 ## 5. Non-functional requirements
 
@@ -157,9 +157,24 @@ No other AWS services (RDS, Lambda, DynamoDB, Amplify, Cognito) are required for
 
 This sequencing is sound: 1.0 gets the actual workflow (advance/return billing, expense tracking) in front of the owner fastest without extra layers, 2.0 stays flexible for whatever 1.0 usage reveals, and 3.0's PWA work is cheap to bolt on later since it doesn't touch the backend or data model at all.
 
-## 9. Open questions to confirm with the owner during build
+## 9. Open questions still to confirm with the owner
 
-- Exact billing formula for partial-day / multi-day rentals (does `Days` multiply into the bill amount, or is the rate already a flat period rate as in the sample sheet?).
-- Whether discounts apply per line item or per whole transaction.
-- Whether Aadhar number needs to be masked/restricted for privacy given it's sensitive PII.
-- Multi-user roles (owner vs. staff) and whether staff should see all financials or only their own entries.
+- Whether Aadhar number needs to be masked/restricted for privacy given it's sensitive PII (currently stored and displayed in plain text in the admin).
+- Multi-user roles (owner vs. staff) and whether staff should see all financials or only their own entries (currently every staff login sees everything — no per-user restriction exists yet).
+- ~~Exact billing formula for partial-day / multi-day rentals~~ — resolved, see §3.1.
+- ~~Whether discounts apply per line item or per whole transaction~~ — resolved (per whole transaction), see §3.1.
+
+## 10. Current implementation status
+
+What's actually built and live on `main` as of this writing (ahead of what §2-§8 describe as the target — this section is the source of truth for "what exists today"; treat the sections above as the original plan, most of which has now been carried out):
+
+- **Backend**: Django 5.2, SQLite for local dev (zero setup), switches to self-hosted Postgres via `DB_ENGINE=postgres` env var for the EC2 deployment described in §6 — not yet actually deployed to AWS.
+- **Data model**: all tables in §3 implemented as Django models (`webapp/rentals/models.py`), migrated and in use.
+- **Admin CRUD**: full create/edit/delete for every model via Django admin (`/admin/`), branded with the company name instead of "Django administration".
+- **Dedicated screens** (beyond admin): Dashboard (cash in/out, deposits held, pending amounts, low-stock alerts, recent transactions), **New Rental** (`/rentals/new/` — customer + dynamic material line items + advance/deposit, generates sequential `SSM/INV/####` invoice numbers), **Rental detail** (`/rentals/<id>/`), **Process Return** (`/rentals/<id>/return/` — mark quantities returned, settle refund/balance, auto-restocks), and a working global **Search** (`/search/` — customers, invoices, materials) — all gated behind staff login.
+- **Real data import**: `python manage.py import_excel_data` loads the owner's actual Excel tracker (customers, rentals, receipts, payments, purchases, expenses) as a best-effort migration; `python manage.py seed_demo_data` for made-up sample data instead. See the command's docstring for matching limitations (auto-generated invoice numbers since the sheet had none; receipts matched to a transaction by customer name + closest date, not a real shared key).
+- **UI**: a Shopify-admin-inspired design — light sidebar (collapsible to icons, state persisted per-browser), topbar with working search + notification bell (honest empty state) + user menu, soft pastel pill badges for status, and green/red semantic coloring for money (received/refund-due = green, paid-out/balance-due/pending = red).
+- **Branding**: company name is one setting (`COMPANY_NAME` in `.env`), read everywhere via a context processor — no hardcoded name in templates. Logo is currently a placeholder icon (`rentals/static/rentals/img/logo.svg`); swapping in a real logo is a one-file change.
+- **Auth**: plain Django username/password only. Google sign-in (django-allauth) was built, tested working, then deliberately reverted to keep 1.0 simple — see §8's 2.0 candidates; the code is not in the repo currently, it would need to be re-added, not just re-enabled.
+- **Git workflow**: `main` is the default branch and is production — all new work happens on a short-lived feature branch and merges via a reviewed pull request, never a direct push to `main`.
+- **Not yet built**: AWS EC2 deployment itself (still runs locally only), Reports module (§4 item 10), PWA layer (§8's 3.0), any multi-user role restriction, Aadhar masking.
