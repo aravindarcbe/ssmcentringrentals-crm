@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}New Rental - {{ company_name }}{% endblock %}
+{% block page_title %}New Rental{% endblock %}
+{% block content %}
+
+<form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        {{ formset.non_form_errors }}
+        <h5 class="card-title mb-3">Customer & date</h5>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Customer</label>
+                {{ form.customer }}
+                {{ form.customer.errors }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Date out</label>
+                {{ form.date_out }}
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Discount</label>
+                {{ form.discount }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Remarks</label>
+                {{ form.remarks }}
+            </div>
+        </div>
+
+        <h5 class="card-title mb-3">Material line items</h5>
+        {{ formset.management_form }}
+        <div class="table-responsive mb-2">
+            <table class="table table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:32%">Material</th>
+                        <th style="width:16%">Count</th>
+                        <th style="width:16%">Days estimated</th>
+                        <th style="width:18%">Rate / ft-day</th>
+                        <th style="width:10%">Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="line-items-body">
+                    {% for lf in formset %}
+                    <tr class="line-item-row">
+                        <td>{{ lf.material }}</td>
+                        <td>{{ lf.count }}</td>
+                        <td>{{ lf.days_estimated }}</td>
+                        <td>{{ lf.rate }}</td>
+                        <td class="text-center">{{ lf.DELETE }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="button" id="add-row-btn" class="btn btn-sm btn-outline-primary mb-4">
+            <i class="bi bi-plus-lg"></i> Add material line
+        </button>
+
+        <h5 class="card-title mb-3">Advance / deposit received</h5>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Amount collected now</label>
+                <input type="number" step="0.01" min="0" name="deposit_amount" class="form-control" placeholder="0.00">
+            </div>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create rental</button>
+        <a href="{% url 'rentals:dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+<script>
+(function () {
+    var addBtn = document.getElementById('add-row-btn');
+    var tbody = document.getElementById('line-items-body');
+    var totalForms = document.getElementById('id_items-TOTAL_FORMS');
+
+    addBtn.addEventListener('click', function () {
+        var rows = tbody.querySelectorAll('.line-item-row');
+        var lastRow = rows[rows.length - 1];
+        var newIndex = parseInt(totalForms.value, 10);
+        var newRow = lastRow.cloneNode(true);
+
+        newRow.querySelectorAll('input, select').forEach(function (el) {
+            var name = el.getAttribute('name');
+            if (!name) return;
+            var newName = name.replace(/items-(\d+)-/, 'items-' + newIndex + '-');
+            el.setAttribute('name', newName);
+            el.setAttribute('id', 'id_' + newName);
+            if (el.type === 'checkbox') {
+                el.checked = false;
+            } else {
+                el.value = '';
+            }
+        });
+
+        tbody.appendChild(newRow);
+        totalForms.value = newIndex + 1;
+    });
+})();
+</script>
+
+{% endblock %}

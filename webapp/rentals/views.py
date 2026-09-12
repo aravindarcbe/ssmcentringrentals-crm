@@ -1,17 +1,23 @@
+import re
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Sum, F
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 
+from .forms import RentalTransactionForm, RentalLineItemFormSet
 from .models import (
     Material,
     RentalTransaction,
+    RentalLineItem,
     Receipt,
     Payment,
     DailyExpense,
     ProductPurchase,
     DepositLedger,
+    StockMovement,
 )
 
 
@@ -75,7 +81,10 @@ MANAGE_SECTIONS = [
     {
         "title": "Rentals & Returns",
         "description": "Rent out material (bill on advance) and process returns (bill on return).",
-        "links": [("Rental transactions", "/admin/rentals/rentaltransaction/")],
+        "links": [
+            ("New rental", "/rentals/new/"),
+            ("Rental transactions", "/admin/rentals/rentaltransaction/"),
+        ],
     },
     {
         "title": "Money In",
@@ -97,3 +106,163 @@ MANAGE_SECTIONS = [
 @staff_member_required
 def manage_home(request):
     return render(request, "rentals/manage.html", {"sections": MANAGE_SECTIONS})
+
+
+def _generate_invoice_number():
+    existing = RentalTransaction.objects.filter(invoice_number__regex=r"^SSM/INV/\d+$")
+    max_n = 0
+    for t in existing:
+        m = re.match(r"^SSM/INV/(\d+)$", t.invoice_number)
+        if m:
+            max_n = max(max_n, int(m.group(1)))
+    return f"SSM/INV/{max_n + 1:04d}"
+
+
+def _to_decimal(value):
+    try:
+        return Decimal(value)
+    except (InvalidOperation, TypeError):
+        return Decimal("0")
+
+
+def _decrement_stock(material_id, count):
+    """Reduce available_count by count, clamped at 0. Returns True if stock was insufficient."""
+    material = Material.objects.get(pk=material_id)
+    insufficient = count > material.available_count
+    material.available_count = max(0, material.available_count - count)
+    material.save(update_fields=["available_count"])
+    return insufficient
+
+
+@staff_member_required
+def rental_new(request):
+    if request.method == "POST":
+        form = RentalTransactionForm(request.POST)
+        formset = RentalLineItemFormSet(request.POST, queryset=RentalLineItem.objects.none(), prefix="items")
+        if form.is_valid() and formset.is_valid():
+            line_forms = [
+                lf for lf in formset
+                if lf.cleaned_data and not lf.cleaned_data.get("DELETE") and lf.cleaned_data.get("material")
+            ]
+            if not line_forms:
+                messages.error(request, "Add at least one material line item.")
+            else:
+                transaction = form.save(commit=False)
+                transaction.invoice_number = _generate_invoice_number()
+                transaction.status = RentalTransaction.STATUS_OPEN
+                transaction.save()
+
+                stock_warnings = []
+                for line_form in line_forms:
+                    line = line_form.save(commit=False)
+                    line.transaction = transaction
+                    line.save()
+                    StockMovement.objects.create(
+                        material=line.material,
+                        transaction=transaction,
+                        direction=StockMovement.DIRECTION_OUT,
+                        count=line.count,
+                        date=transaction.date_out,
+                    )
+                    if _decrement_stock(line.material_id, line.count):
+                        stock_warnings.append(str(line.material))
+
+                deposit_amount = _to_decimal(request.POST.get("deposit_amount"))
+                if deposit_amount > 0:
+                    DepositLedger.objects.create(
+                        transaction=transaction, date=transaction.date_out, amount_collected=deposit_amount
+                    )
+
+                if stock_warnings:
+                    messages.warning(
+                        request,
+                        "Rented more than the recorded available stock for: " + ", ".join(stock_warnings)
+                        + ". Available count set to 0 — update stock counts if this material's numbers are wrong.",
+                    )
+
+                messages.success(request, f"Rental {transaction.invoice_number} created.")
+                return redirect("rentals:rental_detail", pk=transaction.pk)
+    else:
+        form = RentalTransactionForm(initial={"date_out": date.today()})
+        formset = RentalLineItemFormSet(queryset=RentalLineItem.objects.none(), prefix="items")
+
+    return render(request, "rentals/rental_form.html", {"form": form, "formset": formset})
+
+
+@staff_member_required
+def rental_detail(request, pk):
+    transaction = get_object_or_404(
+        RentalTransaction.objects.select_related("customer").prefetch_related(
+            "line_items__material", "deposit_entries", "receipts"
+        ),
+        pk=pk,
+    )
+    return render(request, "rentals/rental_detail.html", {"t": transaction})
+
+
+@staff_member_required
+def rental_return(request, pk):
+    transaction = get_object_or_404(RentalTransaction, pk=pk)
+    line_items = list(transaction.line_items.select_related("material"))
+
+    if request.method == "POST":
+        any_change = False
+        for item in line_items:
+            count_key = f"return_count_{item.id}"
+            date_key = f"return_date_{item.id}"
+            if count_key not in request.POST:
+                continue
+            try:
+                requested = int(request.POST.get(count_key) or 0)
+            except ValueError:
+                requested = item.count_returned
+            new_returned = max(item.count_returned, min(requested, item.count))
+            delta = new_returned - item.count_returned
+            if delta > 0:
+                item.count_returned = new_returned
+                item.date_returned = request.POST.get(date_key) or date.today()
+                item.save()
+                StockMovement.objects.create(
+                    material=item.material,
+                    transaction=transaction,
+                    direction=StockMovement.DIRECTION_IN,
+                    count=delta,
+                    date=item.date_returned,
+                )
+                Material.objects.filter(pk=item.material_id).update(available_count=F("available_count") + delta)
+                any_change = True
+
+        refund_amount = _to_decimal(request.POST.get("refund_amount"))
+        if refund_amount > 0:
+            DepositLedger.objects.create(
+                transaction=transaction, date=date.today(), amount_refunded=refund_amount, note="Refund on return"
+            )
+            any_change = True
+
+        extra_receipt_amount = _to_decimal(request.POST.get("extra_receipt_amount"))
+        if extra_receipt_amount > 0:
+            Receipt.objects.create(
+                transaction=transaction,
+                date=date.today(),
+                amount=extra_receipt_amount,
+                payment_mode="CASH",
+                note="Balance settled on return",
+            )
+            any_change = True
+
+        line_items = list(transaction.line_items.all())
+        if all(li.is_fully_returned for li in line_items):
+            transaction.status = RentalTransaction.STATUS_CLOSED
+        elif any(li.count_returned > 0 for li in line_items):
+            transaction.status = RentalTransaction.STATUS_PARTIALLY_RETURNED
+        else:
+            transaction.status = RentalTransaction.STATUS_OPEN
+        transaction.save()
+
+        if any_change:
+            messages.success(request, "Return processed.")
+        else:
+            messages.info(request, "No changes submitted.")
+        return redirect("rentals:rental_detail", pk=transaction.pk)
+
+    return render(request, "rentals/rental_return.html", {"t": transaction, "line_items": line_items})
