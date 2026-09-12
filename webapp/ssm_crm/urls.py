@@ -25,6 +25,5 @@ admin.site.index_title = "Manage"
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("accounts/", include("allauth.urls")),
     path("", include("rentals.urls")),
 ]
