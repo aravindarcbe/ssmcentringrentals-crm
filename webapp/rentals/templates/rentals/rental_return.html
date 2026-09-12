@@ -44,15 +44,15 @@
                 Deposit held: <strong>₹{{ t.total_deposit_collected|money }} − {{ t.total_deposit_refunded|money }} refunded</strong>
             </p>
             {% if t.net_position > 0 %}
-            <div class="alert alert-warning">Refund currently due to customer: <strong>₹{{ t.net_position|money }}</strong></div>
+            <div class="alert alert-success">Refund currently due to customer: <strong class="money-positive">₹{{ t.net_position|money }}</strong></div>
             <label class="form-label small text-muted">Refund amount to record now</label>
             <input type="number" step="0.01" min="0" name="refund_amount" class="form-control" style="max-width:220px" placeholder="0.00">
             {% elif t.net_position < 0 %}
-            <div class="alert alert-info">Balance currently due from customer: <strong>₹{{ t.net_position|abs|money }}</strong></div>
+            <div class="alert alert-danger">Balance currently due from customer: <strong class="money-negative">₹{{ t.net_position|abs|money }}</strong></div>
             <label class="form-label small text-muted">Additional payment received now</label>
             <input type="number" step="0.01" min="0" name="extra_receipt_amount" class="form-control" style="max-width:220px" placeholder="0.00">
             {% else %}
-            <div class="alert alert-success mb-0">Settled — nothing owed either way.</div>
+            <div class="alert alert-secondary mb-0">Settled — nothing owed either way.</div>
             {% endif %}
         </div>
     </div>
