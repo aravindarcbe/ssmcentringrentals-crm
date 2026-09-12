@@ -7,7 +7,7 @@
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card mb-4">
-            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Material line items</span>
                 {% if t.status != "CLOSED" %}
                 <a href="{% url 'rentals:rental_return' t.pk %}" class="btn btn-sm btn-primary">
@@ -17,7 +17,7 @@
             </div>
             <div class="table-responsive">
                 <table class="table table-sm mb-0 align-middle">
-                    <thead class="table-light">
+                    <thead>
                         <tr><th>Material</th><th>Count</th><th>Rate</th><th>Line amount</th><th>Returned</th></tr>
                     </thead>
                     <tbody>
@@ -29,11 +29,11 @@
                             <td>₹{{ item.line_amount|money }}</td>
                             <td>
                                 {% if item.is_fully_returned %}
-                                <span class="badge text-bg-success">{{ item.count_returned }}/{{ item.count }}</span>
+                                <span class="pill pill-success">{{ item.count_returned }}/{{ item.count }}</span>
                                 {% elif item.count_returned > 0 %}
-                                <span class="badge text-bg-warning">{{ item.count_returned }}/{{ item.count }}</span>
+                                <span class="pill pill-warning">{{ item.count_returned }}/{{ item.count }}</span>
                                 {% else %}
-                                <span class="badge text-bg-secondary">0/{{ item.count }}</span>
+                                <span class="pill pill-secondary">0/{{ item.count }}</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -52,10 +52,10 @@
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header bg-white fw-semibold">Deposit ledger</div>
+                    <div class="card-header">Deposit ledger</div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead class="table-light"><tr><th>Date</th><th>Collected</th><th>Refunded</th></tr></thead>
+                            <thead><tr><th>Date</th><th>Collected</th><th>Refunded</th></tr></thead>
                             <tbody>
                                 {% for d in t.deposit_entries.all %}
                                 <tr><td>{{ d.date }}</td><td>₹{{ d.amount_collected|money }}</td><td>₹{{ d.amount_refunded|money }}</td></tr>
@@ -69,10 +69,10 @@
             </div>
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header bg-white fw-semibold">Receipts</div>
+                    <div class="card-header">Receipts</div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead class="table-light"><tr><th>Date</th><th>Amount</th><th>Mode</th></tr></thead>
+                            <thead><tr><th>Date</th><th>Amount</th><th>Mode</th></tr></thead>
                             <tbody>
                                 {% for r in t.receipts.all %}
                                 <tr><td>{{ r.date }}</td><td>₹{{ r.amount|money }}</td><td>{{ r.get_payment_mode_display }}</td></tr>
@@ -96,9 +96,9 @@
                     <dt class="col-6">Date out</dt><dd class="col-6">{{ t.date_out }}</dd>
                     <dt class="col-6">Status</dt>
                     <dd class="col-6">
-                        {% if t.status == "CLOSED" %}<span class="badge text-bg-success">{{ t.get_status_display }}</span>
-                        {% elif t.status == "PARTIALLY_RETURNED" %}<span class="badge text-bg-warning">{{ t.get_status_display }}</span>
-                        {% else %}<span class="badge text-bg-secondary">{{ t.get_status_display }}</span>{% endif %}
+                        {% if t.status == "CLOSED" %}<span class="pill pill-success">{{ t.get_status_display }}</span>
+                        {% elif t.status == "PARTIALLY_RETURNED" %}<span class="pill pill-warning">{{ t.get_status_display }}</span>
+                        {% else %}<span class="pill pill-secondary">{{ t.get_status_display }}</span>{% endif %}
                     </dd>
                     <dt class="col-6">Discount</dt><dd class="col-6">₹{{ t.discount|money }}</dd>
                     <dt class="col-6">Deposit collected</dt><dd class="col-6">₹{{ t.total_deposit_collected|money }}</dd>

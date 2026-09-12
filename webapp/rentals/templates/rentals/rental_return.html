@@ -7,10 +7,10 @@
 <form method="post">
     {% csrf_token %}
     <div class="card mb-4">
-        <div class="card-header bg-white fw-semibold">{{ t.customer.name }} — mark quantities returned</div>
+        <div class="card-header">{{ t.customer.name }} — mark quantities returned</div>
         <div class="table-responsive">
             <table class="table table-sm align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr><th>Material</th><th>Rented</th><th>Already returned</th><th style="width:160px">Return now (total)</th><th style="width:160px">Return date</th></tr>
                 </thead>
                 <tbody>
@@ -37,7 +37,7 @@
     </div>
 
     <div class="card mb-4">
-        <div class="card-header bg-white fw-semibold">Settle deposit</div>
+        <div class="card-header">Settle deposit</div>
         <div class="card-body">
             <p class="mb-3">
                 Total bill: <strong>₹{{ t.total_bill_amount|money }}</strong> &middot;
