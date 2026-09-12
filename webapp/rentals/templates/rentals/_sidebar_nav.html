@@ -7,48 +7,48 @@
 </div>
 <nav class="flex-grow-1 py-2">
     <div class="nav-section-label">Overview</div>
-    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'rentals:dashboard' %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
+    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="{% url 'rentals:dashboard' %}" title="Dashboard">
+        <i class="bi bi-speedometer2"></i> <span class="nav-label">Dashboard</span>
     </a>
 
     <div class="nav-section-label">Catalog</div>
-    <a class="nav-link" href="/admin/rentals/customer/">
-        <i class="bi bi-people"></i> Customers
+    <a class="nav-link" href="/admin/rentals/customer/" title="Customers">
+        <i class="bi bi-people"></i> <span class="nav-label">Customers</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/material/">
-        <i class="bi bi-boxes"></i> Materials
+    <a class="nav-link" href="/admin/rentals/material/" title="Materials">
+        <i class="bi bi-boxes"></i> <span class="nav-label">Materials</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/materialcategory/">
-        <i class="bi bi-tags"></i> Categories
+    <a class="nav-link" href="/admin/rentals/materialcategory/" title="Categories">
+        <i class="bi bi-tags"></i> <span class="nav-label">Categories</span>
     </a>
 
     <div class="nav-section-label">Rentals</div>
-    <a class="nav-link {% if request.path == '/rentals/new/' %}active{% endif %}" href="{% url 'rentals:rental_new' %}">
-        <i class="bi bi-plus-circle"></i> New Rental
+    <a class="nav-link {% if request.path == '/rentals/new/' %}active{% endif %}" href="{% url 'rentals:rental_new' %}" title="New Rental">
+        <i class="bi bi-plus-circle"></i> <span class="nav-label">New Rental</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/rentaltransaction/">
-        <i class="bi bi-arrow-left-right"></i> Rental Transactions
+    <a class="nav-link" href="/admin/rentals/rentaltransaction/" title="Rental Transactions">
+        <i class="bi bi-arrow-left-right"></i> <span class="nav-label">Rental Transactions</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/stockmovement/">
-        <i class="bi bi-clipboard-data"></i> Stock Movements
+    <a class="nav-link" href="/admin/rentals/stockmovement/" title="Stock Movements">
+        <i class="bi bi-clipboard-data"></i> <span class="nav-label">Stock Movements</span>
     </a>
 
     <div class="nav-section-label">Money</div>
-    <a class="nav-link" href="/admin/rentals/receipt/">
-        <i class="bi bi-cash-coin"></i> Receipts
+    <a class="nav-link" href="/admin/rentals/receipt/" title="Receipts">
+        <i class="bi bi-cash-coin"></i> <span class="nav-label">Receipts</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/payment/">
-        <i class="bi bi-wallet2"></i> Payments
+    <a class="nav-link" href="/admin/rentals/payment/" title="Payments">
+        <i class="bi bi-wallet2"></i> <span class="nav-label">Payments</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/productpurchase/">
-        <i class="bi bi-bag-plus"></i> Product Purchases
+    <a class="nav-link" href="/admin/rentals/productpurchase/" title="Product Purchases">
+        <i class="bi bi-bag-plus"></i> <span class="nav-label">Product Purchases</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/dailyexpense/">
-        <i class="bi bi-receipt"></i> Daily Expenses
+    <a class="nav-link" href="/admin/rentals/dailyexpense/" title="Daily Expenses">
+        <i class="bi bi-receipt"></i> <span class="nav-label">Daily Expenses</span>
     </a>
 
     <div class="nav-section-label">All sections</div>
-    <a class="nav-link {% if request.path == '/manage/' %}active{% endif %}" href="{% url 'rentals:manage' %}">
-        <i class="bi bi-grid-3x3-gap"></i> Manage
+    <a class="nav-link {% if request.path == '/manage/' %}active{% endif %}" href="{% url 'rentals:manage' %}" title="Manage">
+        <i class="bi bi-grid-3x3-gap"></i> <span class="nav-label">Manage</span>
     </a>
 </nav>

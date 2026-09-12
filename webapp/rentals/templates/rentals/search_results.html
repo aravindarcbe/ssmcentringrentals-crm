@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Search - {{ company_name }}{% endblock %}
+{% block page_title %}Search results for "{{ query }}"{% endblock %}
+{% block content %}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">Customers</div>
+            <div class="list-group list-group-flush">
+                {% for c in customers %}
+                <a href="/admin/rentals/customer/{{ c.pk }}/change/" class="list-group-item list-group-item-action">
+                    {{ c.name }} <span class="text-muted small">{{ c.phone }}</span>
+                </a>
+                {% empty %}
+                <div class="list-group-item text-muted small">No matches.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">Rental transactions</div>
+            <div class="list-group list-group-flush">
+                {% for t in transactions %}
+                <a href="{% url 'rentals:rental_detail' t.pk %}" class="list-group-item list-group-item-action">
+                    {{ t.invoice_number }} <span class="text-muted small">{{ t.customer.name }}</span>
+                </a>
+                {% empty %}
+                <div class="list-group-item text-muted small">No matches.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">Materials</div>
+            <div class="list-group list-group-flush">
+                {% for m in materials %}
+                <a href="/admin/rentals/material/{{ m.pk }}/change/" class="list-group-item list-group-item-action">
+                    {{ m }}
+                </a>
+                {% empty %}
+                <div class="list-group-item text-muted small">No matches.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
