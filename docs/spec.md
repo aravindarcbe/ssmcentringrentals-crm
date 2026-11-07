@@ -1,0 +1,180 @@
+# SSM Centring Rentals — CRM Specification
+
+Status: **1.0 in active development** — core data model, admin CRUD, dedicated rent-out/return screens, dashboard, search, and UI are built and running on `main`. See §10 for the up-to-date implementation status.
+Source of truth for business data: [`source-data/SSMSALES_and_EXPENSES.xlsx`](./source-data/SSMSALES_and_EXPENSES.xlsx) (the owner's existing manual tracker, kept in this repo for reference — do not edit it; it documents the real-world workflow this CRM replaces).
+
+## 1. Business context
+
+SSM rents out centring/shuttering equipment (jockeys, sheets, spans, runners, wood planks of various sizes) to construction clients. Today this is tracked by hand in the referenced Excel workbook across 8 sheets. This CRM replaces that workbook with a proper web app while preserving the exact workflow the owner already relies on.
+
+### 1.1 What the existing sheets tell us
+
+| Sheet | Purpose | Key columns |
+|---|---|---|
+| Client Details | Customer master | Client name, Phone number, Place, Aadhar Number |
+| Invoice | Rental transactions, line-item per material | Date, Client name, Phone, Products, Count, Ft, Days, Rate, Bill amount, Paid, Pending amount, Discount, Deposit amount, Reminder/status, Remarks |
+| Recepit | Money received against invoices | Payment received date, Invoice no, Client name, Amount, Payment mode, Balance deposit amount |
+| Payment | Money paid out (salary, loans, misc.) | Date, Description, Client/payee, Amount, Payment mode |
+| Product purchase | Stock acquisition costs | Date, Category, Size, Count, Rate, Amount |
+| Daily expense | Day-to-day operating expenses | Date, Category, Description, Amount, Payment mode |
+| Stock maintain | Inventory on hand + what's checked out to whom | Category, Size, Total count, and a side table of Date/Client/Size/Count checked out |
+| Dash board | (currently empty placeholder in the sheet) | — |
+
+### 1.2 Core workflow to digitize
+
+1. **Add materials** — define rentable items (category e.g. Jockey/Sheet/Span/Runner/Wood-plank, size e.g. "12 inch 8 ft", rental rate) and track stock counts.
+2. **Add customers** — name, phone, place, Aadhar number.
+3. **Rent out material ("bill on advance")** — pick a customer, add one or more material lines (material, count, size/ft, days, rate → line amount), record an advance/deposit received. This opens a rental transaction and reduces available stock for those items.
+4. **Track running cash** — every amount received against a transaction is logged with date, mode (Cash/GPay/Card/Bank), so pending balance is always known per transaction and per customer.
+5. **Return material ("bill on return")** — when material comes back, record actual days used and quantity returned. The system computes the **final bill** (actual usage × rate), compares it to the **deposit already held**:
+   - Deposit > final bill → **refund due to customer**.
+   - Deposit < final bill → **balance due from customer**.
+   Returned stock goes back into available inventory.
+6. **Expense tracking** — outgoing Payments (salary/loans/misc.), Product purchases (stock buy-ins), and Daily expenses (operating costs), each with category, amount, payment mode, date — mirroring the three expense-related sheets.
+7. **Dashboard** — cash position (received vs paid out), open pending amounts, deposits currently held, low-stock materials, recent activity.
+
+## 2. Tech stack (decided)
+
+| Layer | Choice | Why |
+|---|---|---|
+| Backend + Admin CRUD | **Django** (Python) + Django admin | Most of this app is tabular data entry (materials, customers, expenses) — Django admin gives working CRUD screens for free; custom views/templates only needed for the rental → return billing workflow and the dashboard. |
+| Database | **PostgreSQL**, self-hosted on the same EC2 instance | Relational schema matches the sheets naturally (customers, transactions, line items, ledgers with foreign keys). Self-hosting avoids RDS's 12-month free-tier expiry. |
+| Frontend | Django templates + Bootstrap 5 (server-rendered), vanilla JS for the multi-line-item invoice form (dynamic row add via a small script, no framework) | No SPA build pipeline needed; keeps the single-EC2 deploy simple. |
+| Hosting | **One AWS EC2 instance** (t3.micro or t4g.micro), Nginx + Gunicorn + Postgres all on the same box | Free for 12 months under AWS Free Tier (750 hrs/month); after that, ~$6-9/month total — the only ongoing cost, no separate DB bill. |
+| Static/media files | Served by Nginx from local disk (or optionally S3 free tier — 5GB — later if needed) | Keeps everything on one box for now; low traffic doesn't need CDN. |
+| Backups | Nightly `pg_dump` cron job, rotated locally + optionally pushed to S3 free tier (5GB) | Cheap insurance against instance loss. |
+| Domain/SSL | Let's Encrypt (free) via Certbot, any domain registrar of choice | No cost beyond domain registration (~$10-15/year if a custom domain is wanted; not required — can use the EC2 public IP or a free subdomain initially). |
+| Auth | Django's built-in auth (staff accounts for the owner + employees) | No external auth service needed at this scale. |
+
+**Cost summary:** $0 for the first 12 months; **~$6-9/month indefinitely after that** (one EC2 instance, no RDS). See §7 for the full breakdown.
+
+## 3. Data model
+
+```
+Customer
+  id, name, phone, place, aadhar_number, created_at
+
+MaterialCategory        (e.g. Jockey, Sheet, Span, Runner, Wood Plank)
+  id, name
+
+Material                (a specific rentable size/variant within a category)
+  id, category (FK), size_label (e.g. "12 inch 8 ft"), ft_value, default_rate_per_day,
+  total_stock_count, available_count
+
+RentalTransaction        ("Invoice" in the old sheet — one per rental event)
+  id, invoice_number, customer (FK), date_out, status [OPEN, PARTIALLY_RETURNED, CLOSED],
+  discount, remarks, created_at
+
+RentalLineItem            (one row per material within a transaction)
+  id, transaction (FK), material (FK), count, days_estimated, rate,
+  line_amount (count * ft * rate, matching sheet logic),
+  count_returned, date_returned, days_actual
+
+DepositLedger             (advance/deposit tracking per transaction)
+  id, transaction (FK), amount_collected, amount_refunded, balance_held
+
+Receipt                   (money received — advance, part-payment, or final settlement)
+  id, transaction (FK), date, amount, payment_mode [Cash, GPay, Card, Bank], note
+
+Payment                   (money paid out — salary, loan, misc.)
+  id, date, description, payee, amount, payment_mode
+
+ProductPurchase            (stock buy-ins)
+  id, date, category (FK), size_label, count, rate, amount
+
+DailyExpense
+  id, date, category, description, amount, payment_mode
+
+StockMovement              (audit trail: rented out / returned, drives available_count)
+  id, material (FK), transaction (FK), direction [OUT, IN], count, date
+```
+
+### 3.1 Return / refund calculation (as implemented)
+
+Resolved during implementation (was an open question in earlier drafts): the bill amount is **fixed at rental-creation time** and does not change on return — matching the source sheet's own convention (`Bill amount = Ft × Rate`, not multiplied by days). `days_estimated` is stored for reference but is not part of the formula:
+
+```
+RentalLineItem.line_amount = material.ft_value * rate * count      # fixed once the line item is created
+transaction.total_bill_amount = sum(line.line_amount for line in transaction.line_items)
+transaction.net_position = (deposit_collected - deposit_refunded) - total_bill_amount - discount
+  net_position > 0  -> refund due TO the customer
+  net_position < 0  -> balance due FROM the customer
+  net_position == 0 -> settled
+```
+
+Processing a return only updates `count_returned` / `date_returned` per line item (driving `RentalTransaction.status`: OPEN → PARTIALLY_RETURNED → CLOSED) and restocks `Material.available_count` via a `StockMovement` — it does not recompute the bill. Discount applies once per whole transaction (a single field on `RentalTransaction`), not per line item — this was also an open question, now resolved the same way.
+
+## 4. Screens / modules
+
+1. **Dashboard** ✅ built — total cash in / out this month, open pending amounts, deposits currently held, low-stock alerts, recent transactions.
+2. **Materials** ✅ built (via Django admin) — list/add/edit categories and sizes, stock counts, default rates.
+3. **Customers** ✅ built (via Django admin) — list/add/edit customer details.
+4. **New Rental (bill on advance)** ✅ built as a dedicated screen — pick customer, add material lines, capture advance received, generate invoice number.
+5. **Rental detail / Return (bill on return)** ✅ built as dedicated screens — view a transaction, mark items returned, system computes final bill and refund/balance due, record the settling receipt or refund payment.
+6. **Receipts** ✅ built (via Django admin) — list of all money received; filtering by mode is available, filtering by customer/date not yet added.
+7. **Payments** ✅ built (via Django admin) — outgoing payments log.
+8. **Product Purchases** ✅ built (via Django admin) — stock buy-in log.
+9. **Daily Expenses** ✅ built (via Django admin) — operating expense log.
+10. **Reports** ⬜ not built — pending amounts by customer, deposits held, monthly cash flow, expense category breakdown. (Global search across customers/invoices/materials exists as a related but separate feature.)
+
+## 5. Non-functional requirements
+
+- Single-tenant, internal tool — a handful of staff logins, no public signup.
+- Mobile-friendly (Bootstrap responsive) since data entry may happen on-site from a phone.
+- All monetary figures in INR.
+- Dates stored as proper `Date` fields (the source sheet's `DD.M.YYYY` text format is a data-entry artifact to fix, not to replicate).
+
+## 6. Deployment plan (high level)
+
+1. Provision one EC2 instance (t3.micro/t4g.micro, Ubuntu), free-tier eligible.
+2. Install Postgres, Python/Django, Nginx, Gunicorn on the instance.
+3. Django app + Gunicorn managed via systemd; Nginx reverse-proxies to Gunicorn and serves static files.
+4. Certbot for free SSL once a domain is pointed at the instance's Elastic IP.
+5. Nightly `pg_dump` cron → local rotation (+ optional S3 push later).
+6. CI: GitHub Actions (free for public/private repos within free minutes) to run tests on push; manual or simple script-based deploy (`git pull` + restart service) to start, revisit automation later.
+
+## 7. AWS cost breakdown
+
+| Period | Item | Cost |
+|---|---|---|
+| Months 1-12 | EC2 t3.micro/t4g.micro, 750 hrs/month | $0 (Free Tier) |
+| Months 1-12 | EBS storage up to 30GB | $0 (Free Tier) |
+| Ongoing (always free) | Data transfer out, first 100GB/month | $0 |
+| Month 13+ | EC2 t3.micro/t4g.micro, 24/7 | ~$6-9/month |
+| Month 13+ | EBS storage (~20-30GB) | ~$2-3/month |
+| Optional | Custom domain registration | ~$10-15/year |
+| **Total after month 12** | | **~$6-9/month** (no RDS, no other AWS services required) |
+
+No other AWS services (RDS, Lambda, DynamoDB, Amplify, Cognito) are required for this stack, so there is exactly one recurring line item to budget for.
+
+## 8. Release roadmap
+
+| Release | Scope |
+|---|---|
+| **1.0** | Responsive web app — all modules in §4 (materials, customers, rentals with advance/return billing, receipts, payments, purchases, expenses, dashboard), accessible via phone/desktop browser on the single-EC2 deployment described in §6. No native app, no offline support. |
+| **2.0** | Scoped later based on real usage after 1.0 is live (candidates: reports/exports, multi-user roles, notifications/reminders for pending returns, Google sign-in for admin login — to be prioritized against actual pain points once the owner is using it day-to-day). |
+| **3.0** | PWA layer — add web app manifest + service worker to the existing 1.0 app so it installs to the home screen on iPhone and Android and caches pages for offline viewing (see limitations noted for iOS Safari: manual "Add to Home Screen," no background sync, push notifications need iOS 16.4+). No separate codebase, no app store listing, no added hosting cost — purely additive to the 1.0 app. |
+
+This sequencing is sound: 1.0 gets the actual workflow (advance/return billing, expense tracking) in front of the owner fastest without extra layers, 2.0 stays flexible for whatever 1.0 usage reveals, and 3.0's PWA work is cheap to bolt on later since it doesn't touch the backend or data model at all.
+
+## 9. Open questions still to confirm with the owner
+
+- Whether Aadhar number needs to be masked/restricted for privacy given it's sensitive PII (currently stored and displayed in plain text in the admin).
+- Multi-user roles (owner vs. staff) and whether staff should see all financials or only their own entries (currently every staff login sees everything — no per-user restriction exists yet).
+- ~~Exact billing formula for partial-day / multi-day rentals~~ — resolved, see §3.1.
+- ~~Whether discounts apply per line item or per whole transaction~~ — resolved (per whole transaction), see §3.1.
+
+## 10. Current implementation status
+
+What's actually built and live on `main` as of this writing (ahead of what §2-§8 describe as the target — this section is the source of truth for "what exists today"; treat the sections above as the original plan, most of which has now been carried out):
+
+- **Backend**: Django 5.2, SQLite for local dev (zero setup), switches to self-hosted Postgres via `DB_ENGINE=postgres` env var for the EC2 deployment described in §6 — not yet actually deployed to AWS.
+- **Data model**: all tables in §3 implemented as Django models (`webapp/rentals/models.py`), migrated and in use.
+- **Admin CRUD**: full create/edit/delete for every model via Django admin (`/admin/`), branded with the company name instead of "Django administration".
+- **Dedicated screens** (beyond admin): Dashboard (cash in/out, deposits held, pending amounts, low-stock alerts, recent transactions), **New Rental** (`/rentals/new/` — customer + dynamic material line items + advance/deposit, generates sequential `SSM/INV/####` invoice numbers), **Rental detail** (`/rentals/<id>/`), **Process Return** (`/rentals/<id>/return/` — mark quantities returned, settle refund/balance, auto-restocks), and a working global **Search** (`/search/` — customers, invoices, materials) — all gated behind staff login.
+- **Real data import**: `python manage.py import_excel_data` loads the owner's actual Excel tracker (customers, rentals, receipts, payments, purchases, expenses) as a best-effort migration; `python manage.py seed_demo_data` for made-up sample data instead. See the command's docstring for matching limitations (auto-generated invoice numbers since the sheet had none; receipts matched to a transaction by customer name + closest date, not a real shared key).
+- **UI**: a Shopify-admin-inspired design — light sidebar (collapsible to icons, state persisted per-browser), topbar with working search + notification bell (honest empty state) + user menu, soft pastel pill badges for status, and green/red semantic coloring for money (received/refund-due = green, paid-out/balance-due/pending = red).
+- **Branding**: company name is one setting (`COMPANY_NAME` in `.env`), read everywhere via a context processor — no hardcoded name in templates. Logo is currently a placeholder icon (`rentals/static/rentals/img/logo.svg`); swapping in a real logo is a one-file change.
+- **Auth**: plain Django username/password only. Google sign-in (django-allauth) was built, tested working, then deliberately reverted to keep 1.0 simple — see §8's 2.0 candidates; the code is not in the repo currently, it would need to be re-added, not just re-enabled.
+- **Git workflow**: `main` is the default branch and is production — all new work happens on a short-lived feature branch and merges via a reviewed pull request, never a direct push to `main`.
+- **Not yet built**: AWS EC2 deployment itself (still runs locally only), Reports module (§4 item 10), PWA layer (§8's 3.0), any multi-user role restriction, Aadhar masking.
