@@ -44,6 +44,7 @@ from .models import (
 staff_member_required = partial(_staff_member_required, login_url="rentals:login")
 
 
+@staff_member_required
 def dashboard(request):
     today = date.today()
     month_start = today.replace(day=1)
