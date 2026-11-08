@@ -4,6 +4,7 @@ from .models import (
     Customer,
     DailyExpense,
     Material,
+    MaterialCategory,
     Payment,
     ProductPurchase,
     Receipt,
@@ -43,6 +44,15 @@ class CustomerForm(forms.ModelForm):
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "place": forms.TextInput(attrs={"class": "form-control"}),
             "aadhar_number": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+
+class MaterialCategoryForm(forms.ModelForm):
+    class Meta:
+        model = MaterialCategory
+        fields = ["name"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control"}),
         }
 
 

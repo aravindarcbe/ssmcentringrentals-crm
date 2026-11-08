@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Rental Transactions - {{ company_name }}{% endblock %}
+{% block page_title %}Rental Transactions{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="entity-badge entity-badge-navy"><i data-lucide="arrow-left-right"></i></div>
+        <div>
+            <div class="fw-semibold">Rental Transactions</div>
+            <div class="text-muted small">All rent-out invoices — click one to view, settle, or process a return</div>
+        </div>
+    </div>
+    <a href="{% url 'rentals:rental_new' %}" class="btn btn-primary btn-sm">
+        <i data-lucide="plus"></i> New rental
+    </a>
+</div>
+
+<div class="mb-3" style="max-width:360px">
+    <input type="search" name="q" class="form-control form-control-sm" placeholder="Search by invoice or customer..."
+           value="{{ request.GET.q|default:'' }}"
+           hx-get="{% url 'rentals:rentaltransaction_list' %}"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#rentaltransaction-rows" hx-select="#rentaltransaction-rows" hx-swap="outerHTML" hx-push-url="true">
+</div>
+
+{% include "rentals/_rentaltransaction_rows.html" %}
+
+{% endblock %}

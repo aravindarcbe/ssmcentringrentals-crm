@@ -1,0 +1,29 @@
+<div id="stockmovement-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Material</th><th>Invoice</th><th>Direction</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+                {% for m in movements %}
+                <tr>
+                    <td>{{ m.date }}</td>
+                    <td>{{ m.material }}</td>
+                    <td><a href="{% url 'rentals:rental_detail' m.transaction_id %}">{{ m.transaction.invoice_number }}</a></td>
+                    <td>
+                        {% if m.direction == "OUT" %}
+                        <span class="pill pill-warning">Out (rented)</span>
+                        {% else %}
+                        <span class="pill pill-success">In (returned)</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ m.count }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">No stock movements yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="stockmovement-rows" %}
+</div>

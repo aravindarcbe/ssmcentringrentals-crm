@@ -17,6 +17,7 @@ from .forms import (
     RentalLineItemFormSet,
     CustomerForm,
     MaterialForm,
+    MaterialCategoryForm,
     ReceiptForm,
     PaymentForm,
     ProductPurchaseForm,
@@ -25,6 +26,7 @@ from .forms import (
 from .models import (
     Customer,
     Material,
+    MaterialCategory,
     RentalTransaction,
     RentalLineItem,
     Receipt,
@@ -95,8 +97,8 @@ MANAGE_SECTIONS = [
         "description": "What you rent out, and how much of it you have.",
         "links": [
             ("Materials", "/materials/"),
-            ("Material categories", "/admin/rentals/materialcategory/"),
-            ("Stock movements", "/admin/rentals/stockmovement/"),
+            ("Material categories", "/categories/"),
+            ("Stock movements", "/stock-movements/"),
         ],
     },
     {
@@ -104,7 +106,7 @@ MANAGE_SECTIONS = [
         "description": "Rent out material (bill on advance) and process returns (bill on return).",
         "links": [
             ("New rental", "/rentals/new/"),
-            ("Rental transactions", "/admin/rentals/rentaltransaction/"),
+            ("Rental transactions", "/rental-transactions/"),
         ],
     },
     {
@@ -579,3 +581,85 @@ class DailyExpenseUpdateView(UpdateView):
 class DailyExpenseDeleteView(HtmxDeleteMixin, DeleteView):
     model = DailyExpense
     success_url = reverse_lazy("rentals:expense_list")
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class MaterialCategoryListView(HtmxRowsMixin, ListView):
+    model = MaterialCategory
+    template_name = "rentals/category_list.html"
+    rows_template_name = "rentals/_category_rows.html"
+    context_object_name = "categories"
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = MaterialCategory.objects.all()
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            qs = qs.filter(name__icontains=query)
+        return qs
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class MaterialCategoryCreateView(CreateView):
+    model = MaterialCategory
+    form_class = MaterialCategoryForm
+    template_name = "rentals/category_form.html"
+    success_url = reverse_lazy("rentals:category_list")
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class MaterialCategoryUpdateView(UpdateView):
+    model = MaterialCategory
+    form_class = MaterialCategoryForm
+    template_name = "rentals/category_form.html"
+    success_url = reverse_lazy("rentals:category_list")
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class MaterialCategoryDeleteView(HtmxDeleteMixin, DeleteView):
+    model = MaterialCategory
+    success_url = reverse_lazy("rentals:category_list")
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class StockMovementListView(HtmxRowsMixin, ListView):
+    """Read-only: stock movements are an audit trail driven by the rental
+    workflow (New Rental / Process Return), not something staff hand-enter —
+    matches how this data has always been produced, just without the raw
+    admin UI."""
+
+    model = StockMovement
+    template_name = "rentals/stockmovement_list.html"
+    rows_template_name = "rentals/_stockmovement_rows.html"
+    context_object_name = "movements"
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = StockMovement.objects.select_related("material", "material__category", "transaction")
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            qs = qs.filter(material__size_label__icontains=query) | qs.filter(
+                transaction__invoice_number__icontains=query
+            )
+        return qs
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class RentalTransactionListView(HtmxRowsMixin, ListView):
+    """Read-only list: mutations happen via the existing New Rental / Rental
+    Detail / Process Return screens, not a generic edit form — a transaction's
+    line items, deposits, and receipts are too interlinked for a flat CRUD
+    form to make sense."""
+
+    model = RentalTransaction
+    template_name = "rentals/rentaltransaction_list.html"
+    rows_template_name = "rentals/_rentaltransaction_rows.html"
+    context_object_name = "transactions"
+    paginate_by = 25
+
+    def get_queryset(self):
+        qs = RentalTransaction.objects.select_related("customer")
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            qs = qs.filter(invoice_number__icontains=query) | qs.filter(customer__name__icontains=query)
+        return qs
