@@ -1,0 +1,31 @@
+{% load currency_filters %}
+<div id="payment-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Description</th><th>Payee</th><th>Amount</th><th>Mode</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.date }}</td>
+                    <td>{{ p.description }}</td>
+                    <td>{{ p.payee|default:"—" }}</td>
+                    <td class="money-negative">₹{{ p.amount|money }}</td>
+                    <td>{{ p.get_payment_mode_display }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'rentals:payment_edit' p.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
+                                hx-delete="{% url 'rentals:payment_delete' p.pk %}"
+                                hx-confirm="Delete this payment?"
+                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s">Delete</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No payments yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="payment-rows" %}
+</div>

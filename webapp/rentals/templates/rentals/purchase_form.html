@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Purchase - {{ company_name }}{% endblock %}
+{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Purchase{% endblock %}
+{% block content %}
+
+<form method="post" class="card" style="max-width:520px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label small text-muted">Date</label>
+            {{ form.date }}
+            {{ form.date.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Category</label>
+            {{ form.category }}
+            {{ form.category.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Size</label>
+            {{ form.size_label }}
+            {{ form.size_label.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Count</label>
+            {{ form.count }}
+            {{ form.count.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Rate</label>
+            {{ form.rate }}
+            {{ form.rate.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Amount</label>
+            {{ form.amount }}
+            {{ form.amount.errors }}
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+        <a href="{% url 'rentals:purchase_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

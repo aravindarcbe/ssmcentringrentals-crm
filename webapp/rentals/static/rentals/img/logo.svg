@@ -1,0 +1,15 @@
+<!-- SSM (Sri Sai Murugan Centring Rentals) logo mark: abstract navy/green skyline icon, -->
+<!-- approximating the real business-card logo (hand-authored, not a vector trace of the -->
+<!-- original file). Swap this file for the real vector asset if one becomes available — -->
+<!-- rentals/templates/rentals/_sidebar_nav.html references it by this same path, so no -->
+<!-- template change is needed. The company name text next to it is separate and -->
+<!-- configurable via the COMPANY_NAME setting. -->
+<svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <rect x="7" y="17" width="6" height="13" fill="#1a3a6b"/>
+  <polygon points="7,17 10,13 13,17" fill="#1a3a6b"/>
+  <rect x="15" y="9" width="7" height="21" fill="#1a3a6b"/>
+  <polygon points="15,9 18.5,4 22,9" fill="#1a3a6b"/>
+  <rect x="24" y="14" width="6" height="16" fill="#4c9a2a"/>
+  <polygon points="24,14 27,10 30,14" fill="#4c9a2a"/>
+  <rect x="5" y="30" width="26" height="2" rx="1" fill="#1a3a6b"/>
+</svg>

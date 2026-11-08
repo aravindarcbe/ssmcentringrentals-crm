@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Material - {{ company_name }}{% endblock %}
+{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Material{% endblock %}
+{% block content %}
+
+<form method="post" class="card" style="max-width:520px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label small text-muted">Category</label>
+            {{ form.category }}
+            {{ form.category.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Size label</label>
+            {{ form.size_label }}
+            {{ form.size_label.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Length (ft)</label>
+            {{ form.ft_value }}
+            {{ form.ft_value.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Default rate / ft-day</label>
+            {{ form.default_rate_per_day }}
+            {{ form.default_rate_per_day.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Total stock count</label>
+            {{ form.total_stock_count }}
+            {{ form.total_stock_count.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Available count</label>
+            {{ form.available_count }}
+            {{ form.available_count.errors }}
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+        <a href="{% url 'rentals:material_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

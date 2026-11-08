@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Materials - {{ company_name }}{% endblock %}
+{% block page_title %}Materials{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="entity-badge entity-badge-green"><i data-lucide="package"></i></div>
+        <div>
+            <div class="fw-semibold">Materials</div>
+            <div class="text-muted small">What you rent out, and how much of it you have</div>
+        </div>
+    </div>
+    <a href="{% url 'rentals:material_new' %}" class="btn btn-primary btn-sm">
+        <i data-lucide="plus"></i> Add material
+    </a>
+</div>
+
+<div class="mb-3" style="max-width:360px">
+    <input type="search" name="q" class="form-control form-control-sm" placeholder="Search materials..."
+           value="{{ request.GET.q|default:'' }}"
+           hx-get="{% url 'rentals:material_list' %}"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#material-rows" hx-select="#material-rows" hx-swap="outerHTML" hx-push-url="true">
+</div>
+
+{% include "rentals/_material_rows.html" %}
+
+{% endblock %}

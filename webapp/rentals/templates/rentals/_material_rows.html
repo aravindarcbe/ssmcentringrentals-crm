@@ -1,0 +1,31 @@
+{% load currency_filters %}
+<div id="material-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Category</th><th>Size</th><th>Rate / ft-day</th><th>Available</th><th>Total stock</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for m in materials %}
+                <tr>
+                    <td>{{ m.category.name }}</td>
+                    <td>{{ m.size_label }}</td>
+                    <td>₹{{ m.default_rate_per_day|money }}</td>
+                    <td class="{% if m.available_count <= 0 %}money-negative{% endif %}">{{ m.available_count }}</td>
+                    <td>{{ m.total_stock_count }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'rentals:material_edit' m.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
+                                hx-delete="{% url 'rentals:material_delete' m.pk %}"
+                                hx-confirm="Delete {{ m.size_label }}?"
+                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s">Delete</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No materials yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="material-rows" %}
+</div>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in - {{ company_name }}</title>
+    {% load static %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --text-muted: #6d7175;
+            --border: #e3e4e6;
+            --bg: #f6f6f7;
+            --brand-navy: #1a3a6b;
+            --brand-navy-dark: #122a4d;
+            --brand-green: #4c9a2a;
+        }
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--ink); font-size: 0.875rem; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { width: 360px; background: #fff; border: 1px solid var(--border); border-radius: 0.6rem; padding: 2rem 1.75rem; text-align: center; }
+        .login-logo { width: 48px; height: 48px; border-radius: 0.6rem; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
+        .login-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 0.5rem; }
+        .login-title { font-weight: 600; font-size: 1.05rem; }
+        .login-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+        .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+        .pill-brand-navy { background: var(--brand-navy); color: #fff; }
+        .pill-brand-green { background: var(--brand-green); color: #fff; }
+        .field { text-align: left; margin-bottom: 0.85rem; }
+        .field label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+        .field input { width: 100%; border: 1px solid var(--border); border-radius: 0.4rem; padding: 0.5rem 0.65rem; font-size: 0.85rem; background: #fff; }
+        .field input:focus { outline: none; border-color: var(--brand-navy); box-shadow: 0 0 0 2px rgba(26,58,107,0.15); }
+        .btn-primary { width: 100%; background: var(--brand-navy); color: #fff; border: none; border-radius: 0.4rem; padding: 0.55rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 0.4rem; }
+        .btn-primary:hover { background: var(--brand-navy-dark); }
+        .errorlist { list-style: none; padding: 0; margin: 0 0 0.75rem; color: #a41c1c; font-size: 0.78rem; text-align: left; }
+        .login-foot { font-size: 0.7rem; color: var(--text-muted); margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-logo"><img src="{% static 'rentals/img/logo.svg' %}" alt="{{ company_name }} logo"></div>
+        <div class="login-title">{{ company_name }}</div>
+        <div class="login-sub">Sign in to continue</div>
+        <div style="margin: 0.6rem 0 1.1rem">
+            <span class="pill pill-brand-navy">Right Material</span>
+            <span class="pill pill-brand-green">Right Price</span>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <div class="field">
+                <label for="{{ form.username.id_for_label }}">Username</label>
+                <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" autofocus required>
+            </div>
+            <div class="field">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                <input type="password" name="{{ form.password.html_name }}" id="{{ form.password.id_for_label }}" required>
+            </div>
+            <input type="hidden" name="next" value="{{ next }}">
+            <button type="submit" class="btn-primary">Sign in</button>
+        </form>
+        <div class="login-foot">Staff login only &middot; no public sign-up</div>
+    </div>
+</body>
+</html>

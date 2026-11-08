@@ -1,0 +1,20 @@
+[Unit]
+Description=SSM Centring Rentals CRM (Gunicorn)
+After=network.target postgresql.service
+
+[Service]
+Type=notify
+User=ssmcrm
+Group=www-data
+WorkingDirectory=/opt/ssm-crm/webapp
+EnvironmentFile=/opt/ssm-crm/webapp/.env
+ExecStart=/opt/ssm-crm/webapp/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/ssm-crm/gunicorn.sock \
+    ssm_crm.wsgi:application
+RuntimeDirectory=ssm-crm
+RuntimeDirectoryMode=0750
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

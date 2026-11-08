@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Daily Expenses - {{ company_name }}{% endblock %}
+{% block page_title %}Daily Expenses{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="entity-badge entity-badge-navy"><i data-lucide="receipt"></i></div>
+        <div>
+            <div class="fw-semibold">Daily Expenses</div>
+            <div class="text-muted small">Day-to-day operating expenses</div>
+        </div>
+    </div>
+    <a href="{% url 'rentals:expense_new' %}" class="btn btn-primary btn-sm">
+        <i data-lucide="plus"></i> Add expense
+    </a>
+</div>
+
+<div class="mb-3" style="max-width:360px">
+    <input type="search" name="q" class="form-control form-control-sm" placeholder="Search expenses..."
+           value="{{ request.GET.q|default:'' }}"
+           hx-get="{% url 'rentals:expense_list' %}"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#expense-rows" hx-select="#expense-rows" hx-swap="outerHTML" hx-push-url="true">
+</div>
+
+{% include "rentals/_expense_rows.html" %}
+
+{% endblock %}

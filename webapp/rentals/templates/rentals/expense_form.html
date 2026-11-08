@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Expense - {{ company_name }}{% endblock %}
+{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Expense{% endblock %}
+{% block content %}
+
+<form method="post" class="card" style="max-width:520px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label small text-muted">Date</label>
+            {{ form.date }}
+            {{ form.date.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Category</label>
+            {{ form.category }}
+            {{ form.category.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Amount</label>
+            {{ form.amount }}
+            {{ form.amount.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Payment mode</label>
+            {{ form.payment_mode }}
+            {{ form.payment_mode.errors }}
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+        <a href="{% url 'rentals:expense_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}
