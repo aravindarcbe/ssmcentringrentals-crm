@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and fill in real values.
+# terraform.tfvars is gitignored — never commit it (it can contain your IP, etc.)
+
+aws_region       = "ap-south-1"
+instance_type    = "t3.micro"
+key_name         = "your-ec2-key-pair-name"   # must already exist in this region — create in EC2 console first
+ssh_allowed_cidr = "203.0.113.5/32"           # your own public IP + /32, find it at https://checkip.amazonaws.com
+project_name     = "ssm-crm"

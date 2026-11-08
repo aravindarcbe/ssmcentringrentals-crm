@@ -1,0 +1,36 @@
+<div id="customer-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Phone</th><th>Place</th><th>Aadhar number</th><th>Open invoices</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td>{{ c.name }}</td>
+                    <td>{{ c.phone }}</td>
+                    <td>{{ c.place|default:"—" }}</td>
+                    <td>{{ c.aadhar_number|default:"—" }}</td>
+                    <td>
+                        {% if c.open_count %}
+                        <span class="pill pill-warning">{{ c.open_count }} open</span>
+                        {% else %}
+                        <span class="pill pill-success">0 open</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'rentals:customer_edit' c.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
+                                hx-delete="{% url 'rentals:customer_delete' c.pk %}"
+                                hx-confirm="Delete {{ c.name }}?"
+                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s">Delete</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No customers yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="customer-rows" %}
+</div>

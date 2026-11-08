@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Customer - {{ company_name }}{% endblock %}
+{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Customer{% endblock %}
+{% block content %}
+
+<form method="post" class="card" style="max-width:520px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label small text-muted">Name</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Phone</label>
+            {{ form.phone }}
+            {{ form.phone.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Place</label>
+            {{ form.place }}
+            {{ form.place.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Aadhar number</label>
+            {{ form.aadhar_number }}
+            {{ form.aadhar_number.errors }}
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+        <a href="{% url 'rentals:customer_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

@@ -45,8 +45,17 @@ SSM rents out centring/shuttering equipment (jockeys, sheets, spans, runners, wo
 | Backups | Nightly `pg_dump` cron job, rotated locally + optionally pushed to S3 free tier (5GB) | Cheap insurance against instance loss. |
 | Domain/SSL | Let's Encrypt (free) via Certbot, any domain registrar of choice | No cost beyond domain registration (~$10-15/year if a custom domain is wanted; not required — can use the EC2 public IP or a free subdomain initially). |
 | Auth | Django's built-in auth (staff accounts for the owner + employees) | No external auth service needed at this scale. |
+| Infra as code | **Terraform** (`terraform/`), provisioning the EC2 instance, security group, and Elastic IP | Reproducible, versioned infrastructure instead of manual console clicks; `terraform destroy` cleanly tears it down. In-instance setup (Postgres, Nginx, Gunicorn, migrations) stays a shell script (`deploy/provision.sh`) run over SSH after Terraform creates the box — Terraform owns AWS resources, not what runs inside them. |
 
 **Cost summary:** $0 for the first 12 months; **~$6-9/month indefinitely after that** (one EC2 instance, no RDS). See §7 for the full breakdown.
+
+### 2.1 UI design references
+
+No new dependency — these are visual references only, consulted while refining the Shopify-admin-style UI (see the design canvas linked from the project's working notes), not libraries or components pulled into the codebase:
+
+- **[Twenty CRM](https://twenty.com)** (open source, AGPL-3.0) — reference for clean table density, inline editing feel, and fast navigation. Reviewers rate it the best-designed open-source CRM available; too large/AGPL-licensed/no-mobile-app to actually deploy, so used for inspiration only.
+- **[Atomic CRM](https://marmelab.com/atomic-crm/)** (open source, MIT, React + shadcn/ui + Supabase) — reference for restrained, minimal admin-screen styling (cards, borders, spacing) close to this app's existing look.
+- **[Pipedrive](https://www.pipedrive.com)** (commercial, not evaluated for adoption) — reference for visualizing pipeline/status as a kanban board; candidate pattern for a future "Open Rentals by status" view alongside the existing table (not yet built).
 
 ## 3. Data model
 
@@ -126,11 +135,13 @@ Processing a return only updates `count_returned` / `date_returned` per line ite
 
 ## 6. Deployment plan (high level)
 
-1. Provision one EC2 instance (t3.micro/t4g.micro, Ubuntu), free-tier eligible.
-2. Install Postgres, Python/Django, Nginx, Gunicorn on the instance.
-3. Django app + Gunicorn managed via systemd; Nginx reverse-proxies to Gunicorn and serves static files.
+Implemented as code in `deploy/` and `terraform/` (see [`deploy/DEPLOY.md`](../deploy/DEPLOY.md) for the full runbook) — not yet actually run against a real AWS account:
+
+1. Provision one EC2 instance (t3.micro/t4g.micro, Ubuntu), free-tier eligible — via `terraform apply` (`terraform/`), or manually through the AWS console.
+2. Install Postgres, Python/Django, Nginx, Gunicorn on the instance — `deploy/provision.sh`, run once over SSH after the instance exists.
+3. Django app + Gunicorn managed via systemd (`deploy/systemd/ssm-crm.service`); Nginx reverse-proxies to Gunicorn and serves static files (`deploy/nginx/ssm-crm.conf`).
 4. Certbot for free SSL once a domain is pointed at the instance's Elastic IP.
-5. Nightly `pg_dump` cron → local rotation (+ optional S3 push later).
+5. Nightly `pg_dump` cron → local rotation (+ optional S3 push later) — `deploy/backup/pg_backup.sh`.
 6. CI: GitHub Actions (free for public/private repos within free minutes) to run tests on push; manual or simple script-based deploy (`git pull` + restart service) to start, revisit automation later.
 
 ## 7. AWS cost breakdown

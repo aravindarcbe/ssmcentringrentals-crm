@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load currency_filters %}
+{% block title %}Dashboard - {{ company_name }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Cash received</div>
+                <div class="stat-value money-positive">₹{{ cash_in|money }}</div>
+                <div class="stat-sub">{{ month_label }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Cash paid out</div>
+                <div class="stat-value money-negative">₹{{ cash_out|money }}</div>
+                <div class="stat-sub">{{ month_label }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Deposits held</div>
+                <div class="stat-value">₹{{ deposits_held|money }}</div>
+                <div class="stat-sub">across all customers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Pending from customers</div>
+                <div class="stat-value money-negative">₹{{ pending_from_customers|money }}</div>
+                <div class="stat-sub">open transactions</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if refunds_owed_to_customers %}
+<div class="alert alert-danger d-flex align-items-center gap-2">
+    <i data-lucide="circle-alert"></i>
+    Refunds owed to customers on open transactions: <strong>₹{{ refunds_owed_to_customers|money }}</strong>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">Recent rental transactions</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle table-hover">
+                    <thead>
+                        <tr><th>Invoice</th><th>Customer</th><th>Date out</th><th>Status</th><th>Bill</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        <tr>
+                            <td><a href="{% url 'rentals:rental_detail' t.pk %}">{{ t.invoice_number }}</a></td>
+                            <td>{{ t.customer.name }}</td>
+                            <td>{{ t.date_out }}</td>
+                            <td>
+                                {% if t.status == "CLOSED" %}
+                                <span class="pill pill-success">{{ t.get_status_display }}</span>
+                                {% elif t.status == "PARTIALLY_RETURNED" %}
+                                <span class="pill pill-warning">{{ t.get_status_display }}</span>
+                                {% else %}
+                                <span class="pill pill-secondary">{{ t.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>₹{{ t.total_bill_amount|money }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">No rental transactions yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">Low stock materials</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle table-hover">
+                    <thead>
+                        <tr><th>Material</th><th>Available</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for m in low_stock_materials %}
+                        <tr>
+                            <td>{{ m }}</td>
+                            <td>{{ m.available_count }}</td>
+                            <td>{{ m.total_stock_count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-4">No low-stock materials.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,31 @@
+{% load currency_filters %}
+<div id="receipt-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Mode</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for r in receipts %}
+                <tr>
+                    <td>{{ r.date }}</td>
+                    <td><a href="{% url 'rentals:rental_detail' r.transaction_id %}">{{ r.transaction.invoice_number }}</a></td>
+                    <td>{{ r.transaction.customer.name }}</td>
+                    <td class="money-positive">₹{{ r.amount|money }}</td>
+                    <td>{{ r.get_payment_mode_display }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'rentals:receipt_edit' r.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
+                                hx-delete="{% url 'rentals:receipt_delete' r.pk %}"
+                                hx-confirm="Delete this receipt?"
+                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s">Delete</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No receipts yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="receipt-rows" %}
+</div>
