@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from .models import (
     Customer,
@@ -121,6 +122,21 @@ class DailyExpenseForm(forms.ModelForm):
             "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "payment_mode": forms.Select(attrs={"class": "form-select"}),
         }
+
+
+class ExcelUploadForm(forms.Form):
+    file = forms.FileField(
+        label="Excel file (.xlsx)",
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".xlsx"}),
+    )
+
+    def clean_file(self):
+        uploaded = self.cleaned_data["file"]
+        if not uploaded.name.lower().endswith(".xlsx"):
+            raise ValidationError("Please upload a .xlsx file.")
+        if uploaded.size > 10 * 1024 * 1024:
+            raise ValidationError("File is too large (max 10MB).")
+        return uploaded
 
 
 RentalLineItemFormSet = forms.modelformset_factory(
