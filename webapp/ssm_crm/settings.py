@@ -157,13 +157,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Security settings that only apply once Nginx is terminating HTTPS in front of
 # Gunicorn (see deploy/). Off for local dev, where DEBUG=True and there's no TLS.
+# DJANGO_FORCE_HTTPS defaults on once DEBUG is off, but can be set to False for
+# a deploy stage before a domain/TLS cert exists yet (e.g. IP-only QA) — Secure
+# cookies and the HTTPS redirect would otherwise break access over plain HTTP.
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    FORCE_HTTPS = os.environ.get("DJANGO_FORCE_HTTPS", "True") == "True"
+    SECURE_SSL_REDIRECT = FORCE_HTTPS
+    SESSION_COOKIE_SECURE = FORCE_HTTPS
+    CSRF_COOKIE_SECURE = FORCE_HTTPS
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_SECONDS = 31536000 if FORCE_HTTPS else 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = FORCE_HTTPS
     CSRF_TRUSTED_ORIGINS = [
         o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
     ]
