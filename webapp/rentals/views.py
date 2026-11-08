@@ -166,6 +166,44 @@ def excel_import_view(request):
     return render(request, "rentals/excel_import.html", {"form": form, "stats": stats})
 
 
+# Business data only, in FK-safe delete order — never touches User/Group accounts,
+# so existing logins (dev, admin, etc.) keep working after a reset.
+_DANGER_RESET_MODELS = [
+    StockMovement,
+    DepositLedger,
+    Receipt,
+    RentalLineItem,
+    RentalTransaction,
+    Payment,
+    ProductPurchase,
+    DailyExpense,
+    Material,
+    MaterialCategory,
+    Customer,
+]
+
+
+@staff_member_required
+def danger_reset_data_view(request):
+    if not request.user.is_superuser:
+        messages.error(request, "Only a superuser account can delete all data.")
+        return redirect("rentals:excel_import")
+    if request.method != "POST":
+        return redirect("rentals:excel_import")
+
+    with transaction.atomic():
+        counts = {}
+        for model in _DANGER_RESET_MODELS:
+            counts[model.__name__] = model.objects.count()
+            model.objects.all().delete()
+
+    messages.success(
+        request,
+        "All business data deleted: " + ", ".join(f"{k} ({v})" for k, v in counts.items() if v),
+    )
+    return redirect("rentals:excel_import")
+
+
 def _generate_invoice_number():
     existing = RentalTransaction.objects.filter(invoice_number__regex=r"^SSM/INV/\d+$")
     max_n = 0
