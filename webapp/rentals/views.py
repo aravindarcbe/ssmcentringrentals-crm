@@ -1,9 +1,10 @@
 import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from functools import partial
 
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.admin.views.decorators import staff_member_required as _staff_member_required
 from django.db.models import Sum, F, Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -33,6 +34,12 @@ from .models import (
     DepositLedger,
     StockMovement,
 )
+
+# staff_member_required's login_url defaults to the hardcoded "admin:login", unlike
+# login_required which reads settings.LOGIN_URL — without this override every
+# @staff_member_required view below would bounce to Django admin's default login
+# page instead of our branded rentals:login.
+staff_member_required = partial(_staff_member_required, login_url="rentals:login")
 
 
 def dashboard(request):
