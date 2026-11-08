@@ -45,7 +45,7 @@ To tear the instance down later (e.g. to stop paying before the free tier ends, 
 ssh -i your-key.pem ubuntu@<elastic-ip>
 sudo mkdir -p /opt/ssm-crm
 sudo chown ubuntu:ubuntu /opt/ssm-crm
-git clone https://github.com/aravindarcbe/dummy-crm /opt/ssm-crm
+git clone https://github.com/aravindarcbe/ssmcentringrentals-crm /opt/ssm-crm
 cd /opt/ssm-crm
 ```
 
