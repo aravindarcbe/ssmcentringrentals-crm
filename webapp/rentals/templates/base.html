@@ -224,7 +224,12 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="/admin/">Django admin</a></li>
-                            <li><a class="dropdown-item" href="{% url 'admin:logout' %}">Log out</a></li>
+                            <li>
+                                <form method="post" action="{% url 'rentals:logout' %}" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">Log out</button>
+                                </form>
+                            </li>
                         </ul>
                     </div>
                     {% endif %}

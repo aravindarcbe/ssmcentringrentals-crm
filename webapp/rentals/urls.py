@@ -7,6 +7,7 @@ app_name = "rentals"
 
 urlpatterns = [
     path("login/", auth_views.LoginView.as_view(template_name="rentals/login.html", redirect_authenticated_user=True), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(next_page="rentals:login"), name="logout"),
     path("", views.dashboard, name="dashboard"),
     path("manage/", views.manage_home, name="manage"),
     path("rentals/new/", views.rental_new, name="rental_new"),
