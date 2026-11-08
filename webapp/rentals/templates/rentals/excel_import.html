@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Import Data - {{ company_name }}{% endblock %}
+{% block page_title %}Import Data{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <div class="entity-badge entity-badge-green"><i data-lucide="upload"></i></div>
+    <div>
+        <div class="fw-semibold">Import from Excel</div>
+        <div class="text-muted small">Upload the owner's tracker (.xlsx) to load customers, rentals, receipts, payments, purchases, and expenses</div>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="card mb-4" style="max-width:520px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            {{ form.file.label_tag }}
+            {{ form.file }}
+            {{ form.file.errors }}
+        </div>
+        <p class="text-muted small mb-0">
+            Must have these sheets, matching the owner's manual tracker format:
+            Client Details, Invoice, Recepit, Payment, Product purchase, Daily expense.
+            This is a best-effort import, not a lossless migration — see
+            <code>rentals/excel_import.py</code> for exact matching limitations.
+        </p>
+    </div>
+    <div class="card-footer bg-white">
+        <button type="submit" class="btn btn-primary"><i data-lucide="upload"></i> Upload and import</button>
+    </div>
+</form>
+
+{% if stats %}
+<div class="card" style="max-width:520px">
+    <div class="card-header">Import results</div>
+    <table class="mb-0">
+        <tbody>
+            {% for key, value in stats.items %}
+            <tr><td>{{ key }}</td><td class="text-end fw-semibold">{{ value }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}

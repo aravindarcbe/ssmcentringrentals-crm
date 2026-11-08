@@ -51,4 +51,7 @@
     <a class="nav-link {% if request.path == '/manage/' %}active{% endif %}" href="{% url 'rentals:manage' %}" title="Manage">
         <i data-lucide="layout-grid"></i> <span class="nav-label">Manage</span>
     </a>
+    <a class="nav-link {% if '/import-data/' in request.path %}active{% endif %}" href="{% url 'rentals:excel_import' %}" title="Import Data">
+        <i data-lucide="upload"></i> <span class="nav-label">Import Data</span>
+    </a>
 </nav>

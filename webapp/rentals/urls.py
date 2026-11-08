@@ -53,4 +53,6 @@ urlpatterns = [
     path("stock-movements/", views.StockMovementListView.as_view(), name="stockmovement_list"),
 
     path("rental-transactions/", views.RentalTransactionListView.as_view(), name="rentaltransaction_list"),
+
+    path("import-data/", views.excel_import_view, name="excel_import"),
 ]

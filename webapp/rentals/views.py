@@ -3,8 +3,10 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from functools import partial
 
+import openpyxl
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required as _staff_member_required
+from django.db import transaction
 from django.db.models import Sum, F, Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,6 +14,7 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
+from .excel_import import run_import, ExcelImportError
 from .forms import (
     RentalTransactionForm,
     RentalLineItemFormSet,
@@ -22,6 +25,7 @@ from .forms import (
     PaymentForm,
     ProductPurchaseForm,
     DailyExpenseForm,
+    ExcelUploadForm,
 )
 from .models import (
     Customer,
@@ -124,12 +128,42 @@ MANAGE_SECTIONS = [
             ("Daily expenses", "/expenses/"),
         ],
     },
+    {
+        "title": "Data",
+        "description": "Bring in real data from the owner's Excel tracker.",
+        "links": [("Import Data", "/import-data/")],
+    },
 ]
 
 
 @staff_member_required
 def manage_home(request):
     return render(request, "rentals/manage.html", {"sections": MANAGE_SECTIONS})
+
+
+@staff_member_required
+def excel_import_view(request):
+    stats = None
+    if request.method == "POST":
+        form = ExcelUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                wb = openpyxl.load_workbook(form.cleaned_data["file"], data_only=True)
+                with transaction.atomic():
+                    stats = run_import(wb)
+                messages.success(request, "Import complete — see the results below.")
+            except ExcelImportError as e:
+                messages.error(request, str(e))
+            except Exception:
+                messages.error(
+                    request,
+                    "Couldn't read that file — make sure it's a valid, unprotected .xlsx workbook "
+                    "in the same format as the owner's tracker (Client Details, Invoice, Recepit, "
+                    "Payment, Product purchase, Daily expense sheets).",
+                )
+    else:
+        form = ExcelUploadForm()
+    return render(request, "rentals/excel_import.html", {"form": form, "stats": stats})
 
 
 def _generate_invoice_number():
