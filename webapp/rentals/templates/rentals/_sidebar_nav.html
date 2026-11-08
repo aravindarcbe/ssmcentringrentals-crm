@@ -18,7 +18,7 @@
     <a class="nav-link {% if '/materials/' in request.path %}active{% endif %}" href="{% url 'rentals:material_list' %}" title="Materials">
         <i data-lucide="package"></i> <span class="nav-label">Materials</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/materialcategory/" title="Categories">
+    <a class="nav-link {% if '/categories/' in request.path %}active{% endif %}" href="{% url 'rentals:category_list' %}" title="Categories">
         <i data-lucide="tag"></i> <span class="nav-label">Categories</span>
     </a>
 
@@ -26,10 +26,10 @@
     <a class="nav-link {% if request.path == '/rentals/new/' %}active{% endif %}" href="{% url 'rentals:rental_new' %}" title="New Rental">
         <i data-lucide="circle-plus"></i> <span class="nav-label">New Rental</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/rentaltransaction/" title="Rental Transactions">
+    <a class="nav-link {% if '/rental-transactions/' in request.path %}active{% endif %}" href="{% url 'rentals:rentaltransaction_list' %}" title="Rental Transactions">
         <i data-lucide="arrow-left-right"></i> <span class="nav-label">Rental Transactions</span>
     </a>
-    <a class="nav-link" href="/admin/rentals/stockmovement/" title="Stock Movements">
+    <a class="nav-link {% if '/stock-movements/' in request.path %}active{% endif %}" href="{% url 'rentals:stockmovement_list' %}" title="Stock Movements">
         <i data-lucide="clipboard-list"></i> <span class="nav-label">Stock Movements</span>
     </a>
 

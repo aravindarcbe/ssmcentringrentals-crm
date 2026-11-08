@@ -43,4 +43,13 @@ urlpatterns = [
     path("expenses/new/", views.DailyExpenseCreateView.as_view(), name="expense_new"),
     path("expenses/<int:pk>/edit/", views.DailyExpenseUpdateView.as_view(), name="expense_edit"),
     path("expenses/<int:pk>/delete/", views.DailyExpenseDeleteView.as_view(), name="expense_delete"),
+
+    path("categories/", views.MaterialCategoryListView.as_view(), name="category_list"),
+    path("categories/new/", views.MaterialCategoryCreateView.as_view(), name="category_new"),
+    path("categories/<int:pk>/edit/", views.MaterialCategoryUpdateView.as_view(), name="category_edit"),
+    path("categories/<int:pk>/delete/", views.MaterialCategoryDeleteView.as_view(), name="category_delete"),
+
+    path("stock-movements/", views.StockMovementListView.as_view(), name="stockmovement_list"),
+
+    path("rental-transactions/", views.RentalTransactionListView.as_view(), name="rentaltransaction_list"),
 ]

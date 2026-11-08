@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Edit{% else %}Add{% endif %} Category - {{ company_name }}{% endblock %}
+{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Category{% endblock %}
+{% block content %}
+
+<form method="post" class="card" style="max-width:420px">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+            <label class="form-label small text-muted">Name</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save</button>
+        <a href="{% url 'rentals:category_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% load currency_filters %}
+<div id="rentaltransaction-rows">
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Invoice</th><th>Customer</th><th>Date out</th><th>Status</th><th>Total bill</th><th>Net position</th></tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td><a href="{% url 'rentals:rental_detail' t.pk %}">{{ t.invoice_number }}</a></td>
+                    <td>{{ t.customer.name }}</td>
+                    <td>{{ t.date_out }}</td>
+                    <td>
+                        {% if t.status == "CLOSED" %}
+                        <span class="pill pill-success">{{ t.get_status_display }}</span>
+                        {% elif t.status == "PARTIALLY_RETURNED" %}
+                        <span class="pill pill-warning">{{ t.get_status_display }}</span>
+                        {% else %}
+                        <span class="pill pill-secondary">{{ t.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ t.total_bill_amount|money }}</td>
+                    <td class="{% if t.net_position > 0 %}money-positive{% elif t.net_position < 0 %}money-negative{% endif %}">₹{{ t.net_position|abs|money }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">No rental transactions yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include "rentals/_pagination.html" with rows_id="rentaltransaction-rows" %}
+</div>

@@ -9,7 +9,7 @@
             <div class="card-header">Customers</div>
             <div class="list-group list-group-flush">
                 {% for c in customers %}
-                <a href="/admin/rentals/customer/{{ c.pk }}/change/" class="list-group-item list-group-item-action">
+                <a href="{% url 'rentals:customer_edit' c.pk %}" class="list-group-item list-group-item-action">
                     {{ c.name }} <span class="text-muted small">{{ c.phone }}</span>
                 </a>
                 {% empty %}
@@ -37,7 +37,7 @@
             <div class="card-header">Materials</div>
             <div class="list-group list-group-flush">
                 {% for m in materials %}
-                <a href="/admin/rentals/material/{{ m.pk }}/change/" class="list-group-item list-group-item-action">
+                <a href="{% url 'rentals:material_edit' m.pk %}" class="list-group-item list-group-item-action">
                     {{ m }}
                 </a>
                 {% empty %}
