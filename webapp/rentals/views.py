@@ -357,8 +357,9 @@ def rental_invoice(request, pk):
     )
     if request.method == "POST":
         transaction.transportation = _to_decimal(request.POST.get("transportation"))
-        transaction.save(update_fields=["transportation"])
-        messages.success(request, "Transportation charge updated.")
+        transaction.damage_charge = _to_decimal(request.POST.get("damage_charge"))
+        transaction.save(update_fields=["transportation", "damage_charge"])
+        messages.success(request, "Invoice charges updated.")
         return redirect("rentals:rental_invoice", pk=transaction.pk)
     return render(request, "rentals/invoice.html", {"t": transaction})
 

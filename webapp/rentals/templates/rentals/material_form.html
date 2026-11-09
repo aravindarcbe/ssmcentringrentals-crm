@@ -23,9 +23,14 @@
             {{ form.ft_value.errors }}
         </div>
         <div class="mb-3">
-            <label class="form-label small text-muted">Default rate / ft-day</label>
+            <label class="form-label small text-muted">Default rate</label>
             {{ form.default_rate_per_day }}
             {{ form.default_rate_per_day.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Rate unit</label>
+            {{ form.rate_unit }}
+            {{ form.rate_unit.errors }}
         </div>
         <div class="mb-3">
             <label class="form-label small text-muted">Total stock count</label>

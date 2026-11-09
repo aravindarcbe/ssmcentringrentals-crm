@@ -70,12 +70,13 @@ class MaterialCategoryForm(forms.ModelForm):
 class MaterialForm(forms.ModelForm):
     class Meta:
         model = Material
-        fields = ["category", "size_label", "ft_value", "default_rate_per_day", "total_stock_count", "available_count"]
+        fields = ["category", "size_label", "ft_value", "default_rate_per_day", "rate_unit", "total_stock_count", "available_count"]
         widgets = {
             "category": forms.Select(attrs={"class": "form-select"}),
             "size_label": forms.TextInput(attrs={"class": "form-control"}),
             "ft_value": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "default_rate_per_day": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "rate_unit": forms.Select(attrs={"class": "form-select"}),
             "total_stock_count": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
             "available_count": forms.NumberInput(attrs={"class": "form-control", "min": "0"}),
         }
@@ -179,7 +180,7 @@ class ExcelUploadForm(forms.Form):
 
 RentalLineItemFormSet = forms.modelformset_factory(
     RentalLineItem,
-    fields=["material", "count", "days_estimated", "rate"],
+    fields=["material", "count", "days_estimated", "rate", "rate_unit"],
     extra=2,
     can_delete=True,
     widgets={
@@ -187,5 +188,6 @@ RentalLineItemFormSet = forms.modelformset_factory(
         "count": forms.NumberInput(attrs={"class": "form-control form-control-sm", "min": "1"}),
         "days_estimated": forms.NumberInput(attrs={"class": "form-control form-control-sm", "min": "1"}),
         "rate": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+        "rate_unit": forms.Select(attrs={"class": "form-select form-select-sm"}),
     },
 )
