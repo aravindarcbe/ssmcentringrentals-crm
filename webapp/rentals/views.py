@@ -1035,7 +1035,10 @@ class MaterialCategoryListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     context_object_name = "categories"
     paginate_by = 25
     export_filename = "categories"
-    export_columns = [("Name", "name")]
+    export_columns = [
+        ("Name", "name"),
+        ("Rate Unit", lambda c: c.get_default_rate_unit_display()),
+    ]
 
     def get_queryset(self):
         qs = MaterialCategory.objects.all()
