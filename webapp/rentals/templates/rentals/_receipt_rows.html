@@ -14,11 +14,11 @@
                     <td class="money-positive">₹{{ r.amount|money }}</td>
                     <td>{{ r.get_payment_mode_display }}</td>
                     <td class="text-end">
-                        <a href="{% url 'rentals:receipt_edit' r.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
+                        <a href="{% url 'rentals:receipt_edit' r.pk %}" class="btn btn-sm btn-icon btn-outline-secondary" title="Edit"><i data-lucide="pencil"></i></a>
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-secondary text-danger" title="Delete"
                                 hx-delete="{% url 'rentals:receipt_delete' r.pk %}"
                                 hx-confirm="Delete this receipt?"
-                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s">Delete</button>
+                                hx-target="closest tr" hx-swap="outerHTML swap:0.15s"><i data-lucide="trash-2"></i></button>
                     </td>
                 </tr>
                 {% empty %}

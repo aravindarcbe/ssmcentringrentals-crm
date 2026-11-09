@@ -3,44 +3,50 @@
 {% block page_title %}Edit Purchase Item{% endblock %}
 {% block content %}
 
-<form method="post" class="card" style="max-width:520px">
+<form method="post" class="card">
     {% csrf_token %}
     <div class="card-body">
         {{ form.non_field_errors }}
-        <div class="mb-3">
-            <label class="form-label small text-muted">Date</label>
-            {{ form.date }}
-            {{ form.date.errors }}
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Date</label>
+                {{ form.date }}
+                {{ form.date.errors }}
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Size</label>
+                {{ form.size_label }}
+                {{ form.size_label.errors }}
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Category</label>
-            {{ form.category }}
-            {{ form.category.errors }}
+        <div class="row g-3 mb-3">
+            <div class="col-md-8">
+                <label class="form-label small text-muted">Description / notes</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Count</label>
+                {{ form.count }}
+                {{ form.count.errors }}
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Size</label>
-            {{ form.size_label }}
-            {{ form.size_label.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Description / notes</label>
-            {{ form.description }}
-            {{ form.description.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Count</label>
-            {{ form.count }}
-            {{ form.count.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Rate</label>
-            {{ form.rate }}
-            {{ form.rate.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Amount</label>
-            {{ form.amount }}
-            {{ form.amount.errors }}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Rate</label>
+                {{ form.rate }}
+                {{ form.rate.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Amount</label>
+                {{ form.amount }}
+                {{ form.amount.errors }}
+            </div>
         </div>
     </div>
     <div class="card-footer bg-white d-flex gap-2">
