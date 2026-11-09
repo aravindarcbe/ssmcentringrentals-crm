@@ -3,44 +3,50 @@
 {% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Material{% endblock %}
 {% block content %}
 
-<form method="post" class="card" style="max-width:520px">
+<form method="post" class="card">
     {% csrf_token %}
     <div class="card-body">
         {{ form.non_field_errors }}
-        <div class="mb-3">
-            <label class="form-label small text-muted">Category</label>
-            {{ form.category }}
-            {{ form.category.errors }}
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Category</label>
+                {{ form.category }}
+                {{ form.category.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Size label</label>
+                {{ form.size_label }}
+                {{ form.size_label.errors }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Length (ft)</label>
+                {{ form.ft_value }}
+                {{ form.ft_value.errors }}
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Size label</label>
-            {{ form.size_label }}
-            {{ form.size_label.errors }}
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Default rate</label>
+                {{ form.default_rate_per_day }}
+                {{ form.default_rate_per_day.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Rate unit</label>
+                {{ form.rate_unit }}
+                {{ form.rate_unit.errors }}
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Length (ft)</label>
-            {{ form.ft_value }}
-            {{ form.ft_value.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Default rate</label>
-            {{ form.default_rate_per_day }}
-            {{ form.default_rate_per_day.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Rate unit</label>
-            {{ form.rate_unit }}
-            {{ form.rate_unit.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Total stock count</label>
-            {{ form.total_stock_count }}
-            {{ form.total_stock_count.errors }}
-        </div>
-        <div class="mb-3">
-            <label class="form-label small text-muted">Available count</label>
-            {{ form.available_count }}
-            {{ form.available_count.errors }}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Total stock count</label>
+                {{ form.total_stock_count }}
+                {{ form.total_stock_count.errors }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Available count</label>
+                {{ form.available_count }}
+                {{ form.available_count.errors }}
+            </div>
         </div>
     </div>
     <div class="card-footer bg-white d-flex gap-2">

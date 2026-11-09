@@ -49,8 +49,12 @@
 
         .header { position: relative; background: var(--brand-navy); height: 92px; overflow: hidden; }
         .header .diagonal {
-            position: absolute; top: 0; right: 0; width: 55%; height: 100%; background: var(--brand-green);
-            clip-path: polygon(38% 0, 100% 0, 100% 100%, 0% 100%);
+            position: absolute; top: 0; right: 0; width: 60%; height: 100%; background: var(--brand-green);
+            clip-path: polygon(34% 0, 100% 0, 100% 100%, 10% 100%);
+        }
+        .header .diagonal-gap {
+            position: absolute; top: 0; right: 0; width: 60.5%; height: 100%; background: #fff;
+            clip-path: polygon(32% 0, 34.6% 0, 12.6% 100%, 10% 100%);
         }
 
         .brand-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.5rem 0.5rem; gap: 1rem; }
@@ -95,7 +99,12 @@
         .totals-wrap { display: flex; justify-content: flex-end; padding: 0 1.5rem; margin-bottom: 1.1rem; }
         .totals { width: 260px; font-size: 0.82rem; }
         .totals .row { display: flex; justify-content: space-between; padding: 0.3rem 0; }
-        .totals .grand { background: var(--brand-green); color: #fff; font-weight: 700; border-radius: 0.3rem; padding: 0.45rem 0.7rem; margin-top: 0.3rem; }
+        .totals .grand {
+            display: flex; align-items: center; font-weight: 700; border-radius: 0.3rem; overflow: hidden;
+            margin-top: 0.4rem; border: 1px solid var(--brand-green);
+        }
+        .totals .grand .label { background: var(--brand-green); color: #fff; padding: 0.5rem 0.9rem; }
+        .totals .grand .value { padding: 0.5rem 0.9rem; flex-grow: 1; text-align: right; }
 
         .foot-row { display: flex; justify-content: space-between; padding: 0 1.5rem 1.5rem; gap: 1.5rem; }
         .terms { font-size: 0.72rem; color: var(--ink); max-width: 320px; }
@@ -108,12 +117,12 @@
         .sign-right .for-line { font-size: 0.72rem; font-weight: 700; color: var(--brand-green); margin-bottom: 2.2rem; }
 
         .footer-band {
-            background: var(--brand-navy); color: #fff; text-align: center; padding: 0.6rem; font-size: 0.78rem; font-weight: 600;
+            background: var(--brand-navy); color: #fff; padding: 0.6rem 1.5rem; font-size: 0.78rem; font-weight: 600;
             position: relative; overflow: hidden;
         }
         .footer-band .diagonal {
-            position: absolute; top: 0; left: 0; width: 45%; height: 100%; background: var(--brand-green);
-            clip-path: polygon(0 0, 65% 0, 35% 100%, 0 100%);
+            position: absolute; top: 0; right: 0; width: 50%; height: 100%; background: var(--brand-green);
+            clip-path: polygon(55% 0, 100% 0, 100% 100%, 20% 100%);
         }
         .footer-band span { position: relative; z-index: 1; }
 
@@ -148,7 +157,7 @@
     </form>
 
     <div class="sheet">
-        <div class="header"><div class="diagonal"></div></div>
+        <div class="header"><div class="diagonal"></div><div class="diagonal-gap"></div></div>
 
         <div class="brand-row">
             <div class="brand-left">
@@ -211,7 +220,7 @@
                 {% if t.damage_charge %}
                 <div class="row"><span>Damage charge</span><span>₹{{ t.damage_charge|money }}</span></div>
                 {% endif %}
-                <div class="row grand"><span>Grand Total</span><span>₹{{ t.grand_total|money }}</span></div>
+                <div class="grand"><span class="label">Grand Total</span><span class="value">₹{{ t.grand_total|money }}</span></div>
             </div>
         </div>
 
