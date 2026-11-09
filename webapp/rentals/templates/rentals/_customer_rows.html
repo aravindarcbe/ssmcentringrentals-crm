@@ -20,6 +20,7 @@
                         {% endif %}
                     </td>
                     <td class="text-end">
+                        <a href="{% url 'rentals:customer_statement' c.pk %}" class="btn btn-sm btn-outline-secondary">Statement</a>
                         <a href="{% url 'rentals:customer_edit' c.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
                         <button type="button" class="btn btn-sm btn-outline-secondary text-danger"
                                 hx-delete="{% url 'rentals:customer_delete' c.pk %}"
