@@ -11,9 +11,14 @@
             <div class="text-muted small">Names, phone numbers, and addresses</div>
         </div>
     </div>
-    <a href="{% url 'rentals:customer_new' %}" class="btn btn-primary btn-sm">
-        <i data-lucide="plus"></i> Add customer
-    </a>
+    <div class="d-flex gap-2">
+        <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}&{% endif %}export=xlsx" class="btn btn-sm btn-outline-secondary">
+            <i data-lucide="download"></i> Export
+        </a>
+        <a href="{% url 'rentals:customer_new' %}" class="btn btn-primary btn-sm">
+            <i data-lucide="plus"></i> Add customer
+        </a>
+    </div>
 </div>
 
 <div class="mb-3" style="max-width:360px">

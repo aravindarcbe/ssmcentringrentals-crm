@@ -17,6 +17,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from .excel_import import run_import, ExcelImportError
 from .purchase_pdf_import import parse_purchase_pdf
+from .exports import ExportXLSXMixin
 from .forms import (
     RentalTransactionForm,
     RentalLineItemFormSet,
@@ -165,12 +166,88 @@ MANAGE_SECTIONS = [
         "description": "Bring in real data from the owner's Excel tracker.",
         "links": [("Import Data", "/import-data/")],
     },
+    {
+        "title": "Reports",
+        "description": "Pending amounts, deposits held, monthly cash flow, expense breakdown.",
+        "links": [("Reports", "/reports/")],
+    },
 ]
 
 
 @staff_member_required
 def manage_home(request):
     return render(request, "rentals/manage.html", {"sections": MANAGE_SECTIONS})
+
+
+@staff_member_required
+def reports_view(request):
+    today = date.today()
+
+    # Pending amounts / refunds owed, by customer — open transactions only.
+    pending_by_customer = {}
+    refund_by_customer = {}
+    for t in RentalTransaction.objects.exclude(status=RentalTransaction.STATUS_CLOSED).select_related("customer"):
+        pos = t.net_position
+        if pos < 0:
+            pending_by_customer[t.customer] = pending_by_customer.get(t.customer, 0) + (-pos)
+        elif pos > 0:
+            refund_by_customer[t.customer] = refund_by_customer.get(t.customer, 0) + pos
+    pending_rows = sorted(
+        ({"customer": c, "amount": a} for c, a in pending_by_customer.items()),
+        key=lambda r: r["amount"], reverse=True,
+    )
+    refund_rows = sorted(
+        ({"customer": c, "amount": a} for c, a in refund_by_customer.items()),
+        key=lambda r: r["amount"], reverse=True,
+    )
+
+    # Deposits held, by customer — across all their transactions, not just open ones.
+    deposits_by_customer = {}
+    for t in RentalTransaction.objects.select_related("customer").prefetch_related("deposit_entries"):
+        held = t.deposit_held
+        if held:
+            deposits_by_customer[t.customer] = deposits_by_customer.get(t.customer, 0) + held
+    deposit_rows = sorted(
+        ({"customer": c, "amount": a} for c, a in deposits_by_customer.items() if a),
+        key=lambda r: r["amount"], reverse=True,
+    )
+
+    # Monthly cash flow, last 12 months.
+    months = []
+    y, m = today.year, today.month
+    for _ in range(12):
+        months.append((y, m))
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    months.reverse()
+
+    monthly_rows = []
+    for y, m in months:
+        month_start = date(y, m, 1)
+        next_month = date(y + 1, 1, 1) if m == 12 else date(y, m + 1, 1)
+        cash_in = Receipt.objects.filter(date__gte=month_start, date__lt=next_month).aggregate(total=Sum("amount"))["total"] or 0
+        payments_out = Payment.objects.filter(date__gte=month_start, date__lt=next_month).aggregate(total=Sum("amount"))["total"] or 0
+        purchases_out = ProductPurchase.objects.filter(date__gte=month_start, date__lt=next_month).aggregate(total=Sum("amount"))["total"] or 0
+        expenses_out = DailyExpense.objects.filter(date__gte=month_start, date__lt=next_month).aggregate(total=Sum("amount"))["total"] or 0
+        cash_out = payments_out + purchases_out + expenses_out
+        monthly_rows.append({
+            "label": month_start.strftime("%b %Y"),
+            "cash_in": cash_in,
+            "cash_out": cash_out,
+            "net": cash_in - cash_out,
+        })
+
+    expense_breakdown = DailyExpense.objects.values("category").annotate(total=Sum("amount")).order_by("-total")
+
+    context = {
+        "pending_rows": pending_rows,
+        "refund_rows": refund_rows,
+        "deposit_rows": deposit_rows,
+        "monthly_rows": monthly_rows,
+        "expense_breakdown": expense_breakdown,
+    }
+    return render(request, "rentals/reports.html", context)
 
 
 @staff_member_required
@@ -349,6 +426,25 @@ def rental_detail(request, pk):
     return render(request, "rentals/rental_detail.html", {"t": transaction})
 
 
+def _whatsapp_invoice_url(t):
+    """wa.me deep link pre-filled with an invoice summary. India-only phone
+    normalization (10-digit local numbers get a 91 prefix), matching the
+    business this app serves — not meant to generalize beyond that."""
+    from urllib.parse import quote
+
+    digits = re.sub(r"\D", "", t.customer.phone or "")
+    if len(digits) == 10:
+        digits = "91" + digits
+    message = (
+        f"Hello {t.customer.name}, here is your invoice from Sri Sai Murugan Centring Rentals.\n"
+        f"Invoice No: {t.invoice_number}\n"
+        f"Date: {t.date_out.strftime('%d/%m/%Y')}\n"
+        f"Grand Total: Rs. {t.grand_total:,.2f}\n"
+        f"Thank you for your business!"
+    )
+    return f"https://wa.me/{digits}?text={quote(message)}"
+
+
 @staff_member_required
 def rental_invoice(request, pk):
     transaction = get_object_or_404(
@@ -361,7 +457,32 @@ def rental_invoice(request, pk):
         transaction.save(update_fields=["transportation", "damage_charge"])
         messages.success(request, "Invoice charges updated.")
         return redirect("rentals:rental_invoice", pk=transaction.pk)
-    return render(request, "rentals/invoice.html", {"t": transaction})
+    return render(request, "rentals/invoice.html", {"t": transaction, "whatsapp_url": _whatsapp_invoice_url(transaction)})
+
+
+@staff_member_required
+def customer_statement(request, pk):
+    customer = get_object_or_404(Customer, pk=pk)
+    transactions = (
+        RentalTransaction.objects.filter(customer=customer)
+        .prefetch_related("line_items", "deposit_entries", "receipts")
+        .order_by("-date_out", "-id")
+    )
+
+    total_billed = sum((t.total_bill_amount for t in transactions), start=0)
+    total_received = sum((t.total_received for t in transactions), start=0)
+    total_deposits_held = sum((t.deposit_held for t in transactions), start=0)
+    net_balance = sum((t.net_position for t in transactions), start=0)
+
+    context = {
+        "customer": customer,
+        "transactions": transactions,
+        "total_billed": total_billed,
+        "total_received": total_received,
+        "total_deposits_held": total_deposits_held,
+        "net_balance": net_balance,
+    }
+    return render(request, "rentals/customer_statement.html", context)
 
 
 @staff_member_required
@@ -490,12 +611,25 @@ class HtmxDeleteMixin:
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class CustomerListView(HtmxRowsMixin, ListView):
+class CustomerListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = Customer
     template_name = "rentals/customer_list.html"
     rows_template_name = "rentals/_customer_rows.html"
     context_object_name = "customers"
     paginate_by = 25
+    export_filename = "customers"
+    export_columns = [
+        ("Customer ID", "customer_id"),
+        ("Name", "name"),
+        ("Phone", "phone"),
+        ("Type", lambda c: c.get_customer_type_display()),
+        ("Place", "place"),
+        ("Address", "address"),
+        ("Pincode", "pincode"),
+        ("Construction Site Address", "construction_site_address"),
+        ("Payment Terms", "payment_terms"),
+        ("Aadhar Number", "aadhar_number"),
+    ]
 
     def get_queryset(self):
         qs = Customer.objects.annotate(
@@ -542,12 +676,21 @@ class CustomerDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class MaterialListView(HtmxRowsMixin, ListView):
+class MaterialListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = Material
     template_name = "rentals/material_list.html"
     rows_template_name = "rentals/_material_rows.html"
     context_object_name = "materials"
     paginate_by = 25
+    export_filename = "materials"
+    export_columns = [
+        ("Category", lambda m: m.category.name),
+        ("Size", "size_label"),
+        ("Rate", "default_rate_per_day"),
+        ("Rate Unit", lambda m: m.get_rate_unit_display()),
+        ("Available", "available_count"),
+        ("Total Stock", "total_stock_count"),
+    ]
 
     def get_queryset(self):
         qs = Material.objects.select_related("category")
@@ -580,12 +723,21 @@ class MaterialDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class ReceiptListView(HtmxRowsMixin, ListView):
+class ReceiptListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = Receipt
     template_name = "rentals/receipt_list.html"
     rows_template_name = "rentals/_receipt_rows.html"
     context_object_name = "receipts"
     paginate_by = 25
+    export_filename = "receipts"
+    export_columns = [
+        ("Date", "date"),
+        ("Invoice", lambda r: r.transaction.invoice_number),
+        ("Customer", lambda r: r.transaction.customer.name),
+        ("Amount", "amount"),
+        ("Mode", lambda r: r.get_payment_mode_display()),
+        ("Note", "note"),
+    ]
 
     def get_queryset(self):
         qs = Receipt.objects.select_related("transaction", "transaction__customer")
@@ -620,12 +772,20 @@ class ReceiptDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class PaymentListView(HtmxRowsMixin, ListView):
+class PaymentListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = Payment
     template_name = "rentals/payment_list.html"
     rows_template_name = "rentals/_payment_rows.html"
     context_object_name = "payments"
     paginate_by = 25
+    export_filename = "payments"
+    export_columns = [
+        ("Date", "date"),
+        ("Description", "description"),
+        ("Payee", "payee"),
+        ("Amount", "amount"),
+        ("Mode", lambda p: p.get_payment_mode_display()),
+    ]
 
     def get_queryset(self):
         qs = Payment.objects.all()
@@ -712,12 +872,23 @@ def purchase_pdf_parse_view(request):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class ProductPurchaseListView(HtmxRowsMixin, ListView):
+class ProductPurchaseListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = ProductPurchase
     template_name = "rentals/purchase_list.html"
     rows_template_name = "rentals/_purchase_rows.html"
     context_object_name = "purchases"
     paginate_by = 25
+    export_filename = "purchases"
+    export_columns = [
+        ("Date", "date"),
+        ("Bill Number", lambda p: p.bill.bill_number),
+        ("Vendor", lambda p: p.bill.vendor_name),
+        ("Category", lambda p: p.category.name),
+        ("Size / Notes", lambda p: p.size_label or p.description),
+        ("Count", "count"),
+        ("Rate", "rate"),
+        ("Amount", "amount"),
+    ]
 
     def get_queryset(self):
         qs = ProductPurchase.objects.select_related("category", "bill")
@@ -748,12 +919,20 @@ class ProductPurchaseDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class DailyExpenseListView(HtmxRowsMixin, ListView):
+class DailyExpenseListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = DailyExpense
     template_name = "rentals/expense_list.html"
     rows_template_name = "rentals/_expense_rows.html"
     context_object_name = "expenses"
     paginate_by = 25
+    export_filename = "expenses"
+    export_columns = [
+        ("Date", "date"),
+        ("Category", "category"),
+        ("Description", "description"),
+        ("Amount", "amount"),
+        ("Mode", lambda e: e.get_payment_mode_display()),
+    ]
 
     def get_queryset(self):
         qs = DailyExpense.objects.all()
@@ -786,12 +965,14 @@ class DailyExpenseDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class MaterialCategoryListView(HtmxRowsMixin, ListView):
+class MaterialCategoryListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     model = MaterialCategory
     template_name = "rentals/category_list.html"
     rows_template_name = "rentals/_category_rows.html"
     context_object_name = "categories"
     paginate_by = 25
+    export_filename = "categories"
+    export_columns = [("Name", "name")]
 
     def get_queryset(self):
         qs = MaterialCategory.objects.all()
@@ -824,7 +1005,7 @@ class MaterialCategoryDeleteView(HtmxDeleteMixin, DeleteView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class StockMovementListView(HtmxRowsMixin, ListView):
+class StockMovementListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     """Read-only: stock movements are an audit trail driven by the rental
     workflow (New Rental / Process Return), not something staff hand-enter —
     matches how this data has always been produced, just without the raw
@@ -835,6 +1016,14 @@ class StockMovementListView(HtmxRowsMixin, ListView):
     rows_template_name = "rentals/_stockmovement_rows.html"
     context_object_name = "movements"
     paginate_by = 25
+    export_filename = "stock_movements"
+    export_columns = [
+        ("Date", "date"),
+        ("Material", lambda m: str(m.material)),
+        ("Direction", lambda m: m.get_direction_display()),
+        ("Count", "count"),
+        ("Invoice", lambda m: m.transaction.invoice_number),
+    ]
 
     def get_queryset(self):
         qs = StockMovement.objects.select_related("material", "material__category", "transaction")
@@ -847,7 +1036,7 @@ class StockMovementListView(HtmxRowsMixin, ListView):
 
 
 @method_decorator(staff_member_required, name="dispatch")
-class RentalTransactionListView(HtmxRowsMixin, ListView):
+class RentalTransactionListView(ExportXLSXMixin, HtmxRowsMixin, ListView):
     """Read-only list: mutations happen via the existing New Rental / Rental
     Detail / Process Return screens, not a generic edit form — a transaction's
     line items, deposits, and receipts are too interlinked for a flat CRUD
@@ -858,6 +1047,15 @@ class RentalTransactionListView(HtmxRowsMixin, ListView):
     rows_template_name = "rentals/_rentaltransaction_rows.html"
     context_object_name = "transactions"
     paginate_by = 25
+    export_filename = "rental_transactions"
+    export_columns = [
+        ("Invoice", "invoice_number"),
+        ("Customer", lambda t: t.customer.name),
+        ("Date Out", "date_out"),
+        ("Status", lambda t: t.get_status_display()),
+        ("Total Bill", lambda t: t.total_bill_amount),
+        ("Net Position", lambda t: t.net_position),
+    ]
 
     def get_queryset(self):
         qs = RentalTransaction.objects.select_related("customer")

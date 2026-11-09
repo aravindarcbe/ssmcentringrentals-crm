@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load currency_filters %}
+{% block title %}{{ customer.name }} - Statement - {{ company_name }}{% endblock %}
+{% block page_title %}Customer Statement{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <div class="entity-badge entity-badge-navy"><i data-lucide="user-round"></i></div>
+    <div>
+        <div class="fw-semibold">{{ customer.name }}</div>
+        <div class="text-muted small">
+            {{ customer.customer_id|default:"—" }} &middot; {{ customer.phone }}
+            {% if customer.place %}&middot; {{ customer.place }}{% endif %}
+        </div>
+    </div>
+    <a href="{% url 'rentals:customer_edit' customer.pk %}" class="btn btn-sm btn-outline-secondary ms-auto">
+        <i data-lucide="pencil"></i> Edit customer
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Total billed</div>
+                <div class="stat-value">₹{{ total_billed|money }}</div>
+                <div class="stat-sub">across {{ transactions|length }} rental{{ transactions|length|pluralize }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Total received</div>
+                <div class="stat-value money-positive">₹{{ total_received|money }}</div>
+                <div class="stat-sub">all receipts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Deposits held</div>
+                <div class="stat-value">₹{{ total_deposits_held|money }}</div>
+                <div class="stat-sub">collected minus refunded</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="stat-card card h-100">
+            <div class="card-body">
+                <div class="stat-label">Net balance</div>
+                {% if net_balance > 0 %}
+                <div class="stat-value money-positive">₹{{ net_balance|money }}</div>
+                <div class="stat-sub">refund owed to customer</div>
+                {% elif net_balance < 0 %}
+                <div class="stat-value money-negative">₹{{ net_balance|abs|money }}</div>
+                <div class="stat-sub">balance due from customer</div>
+                {% else %}
+                <div class="stat-value">₹0</div>
+                <div class="stat-sub">settled</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Rental history</div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle table-hover">
+            <thead>
+                <tr><th>Invoice</th><th>Date out</th><th>Status</th><th>Bill</th><th>Received</th><th>Deposits held</th><th>Balance</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td><a href="{% url 'rentals:rental_detail' t.pk %}">{{ t.invoice_number }}</a></td>
+                    <td>{{ t.date_out }}</td>
+                    <td>
+                        {% if t.status == "CLOSED" %}
+                        <span class="pill pill-success">{{ t.get_status_display }}</span>
+                        {% elif t.status == "PARTIALLY_RETURNED" %}
+                        <span class="pill pill-warning">{{ t.get_status_display }}</span>
+                        {% else %}
+                        <span class="pill pill-secondary">{{ t.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ t.total_bill_amount|money }}</td>
+                    <td>₹{{ t.total_received|money }}</td>
+                    <td>₹{{ t.deposit_held|money }}</td>
+                    <td>
+                        {% if t.net_position > 0 %}
+                        <span class="money-positive">₹{{ t.net_position|money }} refund</span>
+                        {% elif t.net_position < 0 %}
+                        <span class="money-negative">₹{{ t.net_position|abs|money }} due</span>
+                        {% else %}
+                        <span class="text-muted">Settled</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'rentals:rental_invoice' t.pk %}" class="btn btn-sm btn-outline-secondary">Invoice</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No rentals for this customer yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
