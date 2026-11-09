@@ -9,11 +9,16 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span>Material line items</span>
-                {% if t.status != "CLOSED" %}
-                <a href="{% url 'rentals:rental_return' t.pk %}" class="btn btn-sm btn-primary">
-                    <i data-lucide="undo-2"></i> Process return
-                </a>
-                {% endif %}
+                <div class="d-flex gap-2">
+                    <a href="{% url 'rentals:rental_invoice' t.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i data-lucide="file-text"></i> Generate invoice
+                    </a>
+                    {% if t.status != "CLOSED" %}
+                    <a href="{% url 'rentals:rental_return' t.pk %}" class="btn btn-sm btn-primary">
+                        <i data-lucide="undo-2"></i> Process return
+                    </a>
+                    {% endif %}
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-sm mb-0 align-middle">
