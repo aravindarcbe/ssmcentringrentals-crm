@@ -158,10 +158,32 @@ class Payment(models.Model):
         return f"{self.description} - {self.amount}"
 
 
+class PurchaseBill(models.Model):
+    """Header for a vendor purchase bill — one bill can list several line items."""
+
+    bill_number = models.CharField(max_length=30, unique=True)
+    date = models.DateField()
+    vendor_name = models.CharField(max_length=200, blank=True)
+    remarks = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+
+    def __str__(self):
+        return f"{self.bill_number} - {self.vendor_name or 'purchase'}"
+
+    @property
+    def total_amount(self):
+        return sum((line.amount for line in self.line_items.all()), start=0)
+
+
 class ProductPurchase(models.Model):
+    bill = models.ForeignKey(PurchaseBill, on_delete=models.CASCADE, related_name="line_items")
     date = models.DateField()
     category = models.ForeignKey(MaterialCategory, on_delete=models.PROTECT, related_name="purchases")
     size_label = models.CharField(max_length=100, blank=True)
+    description = models.CharField(max_length=255, blank=True, help_text="Free-text notes, e.g. from an imported vendor bill")
     count = models.PositiveIntegerField()
     rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)

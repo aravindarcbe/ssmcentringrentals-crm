@@ -36,7 +36,8 @@ urlpatterns = [
     path("payments/<int:pk>/delete/", views.PaymentDeleteView.as_view(), name="payment_delete"),
 
     path("purchases/", views.ProductPurchaseListView.as_view(), name="purchase_list"),
-    path("purchases/new/", views.ProductPurchaseCreateView.as_view(), name="purchase_new"),
+    path("purchases/new/", views.purchase_bill_new, name="purchase_new"),
+    path("purchases/parse-pdf/", views.purchase_pdf_parse_view, name="purchase_pdf_parse"),
     path("purchases/<int:pk>/edit/", views.ProductPurchaseUpdateView.as_view(), name="purchase_edit"),
     path("purchases/<int:pk>/delete/", views.ProductPurchaseDeleteView.as_view(), name="purchase_delete"),
 

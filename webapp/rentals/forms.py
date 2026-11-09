@@ -8,6 +8,7 @@ from .models import (
     MaterialCategory,
     Payment,
     ProductPurchase,
+    PurchaseBill,
     Receipt,
     RentalLineItem,
     RentalTransaction,
@@ -100,15 +101,43 @@ class PaymentForm(forms.ModelForm):
 class ProductPurchaseForm(forms.ModelForm):
     class Meta:
         model = ProductPurchase
-        fields = ["date", "category", "size_label", "count", "rate", "amount"]
+        fields = ["date", "category", "size_label", "description", "count", "rate", "amount"]
         widgets = {
             "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "category": forms.Select(attrs={"class": "form-select"}),
             "size_label": forms.TextInput(attrs={"class": "form-control"}),
+            "description": forms.TextInput(attrs={"class": "form-control"}),
             "count": forms.NumberInput(attrs={"class": "form-control", "min": "1"}),
             "rate": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
         }
+
+
+class PurchaseBillForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseBill
+        fields = ["date", "vendor_name", "remarks"]
+        widgets = {
+            "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "vendor_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "Vendor / supplier name"}),
+            "remarks": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+
+ProductPurchaseLineItemFormSet = forms.modelformset_factory(
+    ProductPurchase,
+    fields=["category", "size_label", "description", "count", "rate", "amount"],
+    extra=2,
+    can_delete=True,
+    widgets={
+        "category": forms.Select(attrs={"class": "form-select form-select-sm"}),
+        "size_label": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        "description": forms.TextInput(attrs={"class": "form-control form-control-sm"}),
+        "count": forms.NumberInput(attrs={"class": "form-control form-control-sm", "min": "1"}),
+        "rate": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+        "amount": forms.NumberInput(attrs={"class": "form-control form-control-sm", "step": "0.01"}),
+    },
+)
 
 
 class DailyExpenseForm(forms.ModelForm):

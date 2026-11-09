@@ -3,14 +3,15 @@
     <div class="card">
         <table>
             <thead>
-                <tr><th>Date</th><th>Category</th><th>Size</th><th>Count</th><th>Rate</th><th>Amount</th><th></th></tr>
+                <tr><th>Date</th><th>Bill</th><th>Category</th><th>Size / notes</th><th>Count</th><th>Rate</th><th>Amount</th><th></th></tr>
             </thead>
             <tbody>
                 {% for p in purchases %}
                 <tr>
                     <td>{{ p.date }}</td>
+                    <td>{{ p.bill.bill_number }}{% if p.bill.vendor_name %}<div class="text-muted small">{{ p.bill.vendor_name }}</div>{% endif %}</td>
                     <td>{{ p.category.name }}</td>
-                    <td>{{ p.size_label|default:"—" }}</td>
+                    <td>{{ p.size_label|default:p.description|default:"—" }}</td>
                     <td>{{ p.count }}</td>
                     <td>₹{{ p.rate|money }}</td>
                     <td class="money-negative">₹{{ p.amount|money }}</td>
@@ -23,7 +24,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">No purchases yet.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">No purchases yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

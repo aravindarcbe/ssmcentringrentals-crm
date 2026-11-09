@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{% if object %}Edit{% else %}Add{% endif %} Purchase - {{ company_name }}{% endblock %}
-{% block page_title %}{% if object %}Edit{% else %}Add{% endif %} Purchase{% endblock %}
+{% block title %}Edit Purchase Item - {{ company_name }}{% endblock %}
+{% block page_title %}Edit Purchase Item{% endblock %}
 {% block content %}
 
 <form method="post" class="card" style="max-width:520px">
@@ -21,6 +21,11 @@
             <label class="form-label small text-muted">Size</label>
             {{ form.size_label }}
             {{ form.size_label.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label small text-muted">Description / notes</label>
+            {{ form.description }}
+            {{ form.description.errors }}
         </div>
         <div class="mb-3">
             <label class="form-label small text-muted">Count</label>
