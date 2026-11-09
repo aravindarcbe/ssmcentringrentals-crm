@@ -2,15 +2,16 @@
     <div class="card">
         <table>
             <thead>
-                <tr><th>Name</th><th>Phone</th><th>Place</th><th>Aadhar number</th><th>Open invoices</th><th></th></tr>
+                <tr><th>ID</th><th>Name</th><th>Phone</th><th>Type</th><th>Place</th><th>Open invoices</th><th></th></tr>
             </thead>
             <tbody>
                 {% for c in customers %}
                 <tr>
+                    <td class="text-muted small">{{ c.customer_id|default:"—" }}</td>
                     <td>{{ c.name }}</td>
                     <td>{{ c.phone }}</td>
+                    <td>{{ c.get_customer_type_display|default:"—" }}</td>
                     <td>{{ c.place|default:"—" }}</td>
-                    <td>{{ c.aadhar_number|default:"—" }}</td>
                     <td>
                         {% if c.open_count %}
                         <span class="pill pill-warning">{{ c.open_count }} open</span>
@@ -27,7 +28,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-4">No customers yet.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">No customers yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

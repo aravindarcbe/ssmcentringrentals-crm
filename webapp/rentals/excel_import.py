@@ -112,6 +112,12 @@ def run_import(wb):
     # 1. Customers from "Client Details"
     # ---------------------------------------------------------------
     customers_by_key = {normalize(c.name): c for c in Customer.objects.all()}
+    customer_seq = Customer.objects.filter(customer_id__startswith="SSM-CUS-IMPORT-").count()
+
+    def next_customer_id():
+        nonlocal customer_seq
+        customer_seq += 1
+        return f"SSM-CUS-IMPORT-{customer_seq:04d}"
 
     ws = wb["Client Details"]
     created_customers = 0
@@ -123,6 +129,7 @@ def run_import(wb):
         if key in customers_by_key:
             continue
         customer = Customer.objects.create(
+            customer_id=next_customer_id(),
             name=name.strip(),
             phone=to_str_phone(phone),
             place=(place or "").strip() if isinstance(place, str) else "",
@@ -136,7 +143,7 @@ def run_import(wb):
         key = normalize(name)
         if key in customers_by_key:
             return customers_by_key[key]
-        customer = Customer.objects.create(name=name.strip(), phone=to_str_phone(phone))
+        customer = Customer.objects.create(customer_id=next_customer_id(), name=name.strip(), phone=to_str_phone(phone))
         customers_by_key[key] = customer
         return customer
 

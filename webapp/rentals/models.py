@@ -11,9 +11,26 @@ PAYMENT_MODE_CHOICES = [
 
 
 class Customer(models.Model):
+    TYPE_CONTRACTOR = "CONTRACTOR"
+    TYPE_BUILDER = "BUILDER"
+    TYPE_OWNER = "OWNER"
+    TYPE_MASON = "MASON"
+    TYPE_CHOICES = [
+        (TYPE_CONTRACTOR, "Contractor"),
+        (TYPE_BUILDER, "Builder"),
+        (TYPE_OWNER, "Owner"),
+        (TYPE_MASON, "Mason"),
+    ]
+
+    customer_id = models.CharField(max_length=20, unique=True, blank=True, help_text="Auto-generated, e.g. SSM-CUS-0001")
     name = models.CharField(max_length=200)
     phone = models.CharField(max_length=20)
     place = models.CharField(max_length=200, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    pincode = models.CharField(max_length=10, blank=True)
+    construction_site_address = models.CharField(max_length=255, blank=True)
+    customer_type = models.CharField(max_length=20, choices=TYPE_CHOICES, blank=True)
+    payment_terms = models.CharField(max_length=255, blank=True, help_text="e.g. \"Rent ₹500/day, Advance ₹5000\"")
     aadhar_number = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
