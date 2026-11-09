@@ -8,7 +8,7 @@
     <div class="entity-badge entity-badge-navy"><i data-lucide="bar-chart-3"></i></div>
     <div>
         <div class="fw-semibold">Reports</div>
-        <div class="text-muted small">Pending amounts, deposits held, monthly cash flow, expense breakdown</div>
+        <div class="text-muted small">Pending amounts, deposits held, material-wise rentals, monthly cash flow, expense breakdown</div>
     </div>
 </div>
 
@@ -95,6 +95,26 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">Material-wise rental report (all-time)</div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr><th>Material</th><th class="text-end">Count rented</th><th class="text-end">Total amount</th></tr></thead>
+            <tbody>
+                {% for row in material_rows %}
+                <tr>
+                    <td>{{ row.material }}</td>
+                    <td class="text-end">{{ row.count }}</td>
+                    <td class="text-end">₹{{ row.amount|money }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-muted py-4">No rentals recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
