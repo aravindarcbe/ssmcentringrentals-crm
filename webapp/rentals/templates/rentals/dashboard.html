@@ -4,6 +4,26 @@
 {% block page_title %}Dashboard{% endblock %}
 {% block content %}
 
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="period-filter">
+    {% for value, label in periods %}
+    <a href="?period={{ value }}" class="pill-filter {% if selected_period == value %}active{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+{% if selected_period == "custom" %}
+<form method="get" class="d-flex flex-wrap align-items-end gap-2 mb-4">
+    <input type="hidden" name="period" value="custom">
+    <div>
+        <label class="form-label small text-muted d-block mb-1">From</label>
+        <input type="date" name="from" value="{{ custom_from }}" class="form-control form-control-sm">
+    </div>
+    <div>
+        <label class="form-label small text-muted d-block mb-1">To</label>
+        <input type="date" name="to" value="{{ custom_to }}" class="form-control form-control-sm">
+    </div>
+    <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+</form>
+{% endif %}
+
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
         <div class="stat-card card h-100">

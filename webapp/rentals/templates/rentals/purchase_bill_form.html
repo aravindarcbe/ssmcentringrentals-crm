@@ -58,7 +58,11 @@
                         <td>{{ lf.count }}</td>
                         <td>{{ lf.rate }}</td>
                         <td>{{ lf.amount }}</td>
-                        <td class="text-center">{{ lf.DELETE }}</td>
+                        <td class="text-center">
+                            <label class="remove-line-toggle" title="Check to remove this line">
+                                {{ lf.DELETE }} <i data-lucide="trash-2"></i>
+                            </label>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
