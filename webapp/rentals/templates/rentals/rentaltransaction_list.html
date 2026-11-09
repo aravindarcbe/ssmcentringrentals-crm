@@ -11,9 +11,14 @@
             <div class="text-muted small">All rent-out invoices — click one to view, settle, or process a return</div>
         </div>
     </div>
-    <a href="{% url 'rentals:rental_new' %}" class="btn btn-primary btn-sm">
-        <i data-lucide="plus"></i> New rental
-    </a>
+    <div class="d-flex gap-2">
+        <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}&{% endif %}export=xlsx" class="btn btn-sm btn-outline-secondary">
+            <i data-lucide="download"></i> Export
+        </a>
+        <a href="{% url 'rentals:rental_new' %}" class="btn btn-primary btn-sm">
+            <i data-lucide="plus"></i> New rental
+        </a>
+    </div>
 </div>
 
 <div class="mb-3" style="max-width:360px">

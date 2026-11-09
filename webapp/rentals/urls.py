@@ -10,6 +10,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(next_page="rentals:login"), name="logout"),
     path("", views.dashboard, name="dashboard"),
     path("manage/", views.manage_home, name="manage"),
+    path("reports/", views.reports_view, name="reports"),
     path("rentals/new/", views.rental_new, name="rental_new"),
     path("rentals/<int:pk>/", views.rental_detail, name="rental_detail"),
     path("rentals/<int:pk>/return/", views.rental_return, name="rental_return"),
@@ -20,6 +21,7 @@ urlpatterns = [
     path("customers/new/", views.CustomerCreateView.as_view(), name="customer_new"),
     path("customers/<int:pk>/edit/", views.CustomerUpdateView.as_view(), name="customer_edit"),
     path("customers/<int:pk>/delete/", views.CustomerDeleteView.as_view(), name="customer_delete"),
+    path("customers/<int:pk>/statement/", views.customer_statement, name="customer_statement"),
 
     path("materials/", views.MaterialListView.as_view(), name="material_list"),
     path("materials/new/", views.MaterialCreateView.as_view(), name="material_new"),

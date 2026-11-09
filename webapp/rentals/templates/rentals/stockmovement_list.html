@@ -11,6 +11,9 @@
             <div class="text-muted small">Audit trail of material rented out and returned — generated automatically by New Rental and Process Return, not hand-entered</div>
         </div>
     </div>
+    <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}&{% endif %}export=xlsx" class="btn btn-sm btn-outline-secondary">
+        <i data-lucide="download"></i> Export
+    </a>
 </div>
 
 <div class="mb-3" style="max-width:360px">

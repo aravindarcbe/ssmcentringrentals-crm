@@ -133,6 +133,10 @@ class RentalTransaction(models.Model):
         return sum((r.amount for r in self.receipts.all()), start=0)
 
     @property
+    def deposit_held(self):
+        return self.total_deposit_collected - self.total_deposit_refunded
+
+    @property
     def net_position(self):
         """Positive = refund due to customer, negative = balance due from customer."""
         return (self.total_deposit_collected - self.total_deposit_refunded) - self.total_bill_amount - self.discount

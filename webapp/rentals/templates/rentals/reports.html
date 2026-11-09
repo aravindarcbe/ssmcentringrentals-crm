@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load currency_filters %}
+{% block title %}Reports - {{ company_name }}{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+
+<div class="d-flex align-items-center gap-2 mb-4">
+    <div class="entity-badge entity-badge-navy"><i data-lucide="bar-chart-3"></i></div>
+    <div>
+        <div class="fw-semibold">Reports</div>
+        <div class="text-muted small">Pending amounts, deposits held, monthly cash flow, expense breakdown</div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Pending from customers</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Customer</th><th class="text-end">Pending</th></tr></thead>
+                    <tbody>
+                        {% for row in pending_rows %}
+                        <tr>
+                            <td><a href="{% url 'rentals:customer_statement' row.customer.pk %}">{{ row.customer.name }}</a></td>
+                            <td class="text-end money-negative">₹{{ row.amount|money }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">Nothing pending.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Refunds owed to customers</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Customer</th><th class="text-end">Refund owed</th></tr></thead>
+                    <tbody>
+                        {% for row in refund_rows %}
+                        <tr>
+                            <td><a href="{% url 'rentals:customer_statement' row.customer.pk %}">{{ row.customer.name }}</a></td>
+                            <td class="text-end money-positive">₹{{ row.amount|money }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">No refunds owed.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Deposits held by customer</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Customer</th><th class="text-end">Held</th></tr></thead>
+                    <tbody>
+                        {% for row in deposit_rows %}
+                        <tr>
+                            <td><a href="{% url 'rentals:customer_statement' row.customer.pk %}">{{ row.customer.name }}</a></td>
+                            <td class="text-end">₹{{ row.amount|money }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">No deposits held.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Expense category breakdown (all-time)</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Category</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        {% for row in expense_breakdown %}
+                        <tr>
+                            <td>{{ row.category }}</td>
+                            <td class="text-end money-negative">₹{{ row.total|money }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center text-muted py-4">No expenses recorded.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Monthly cash flow (last 12 months)</div>
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 align-middle">
+            <thead><tr><th>Month</th><th class="text-end">Cash in</th><th class="text-end">Cash out</th><th class="text-end">Net</th></tr></thead>
+            <tbody>
+                {% for row in monthly_rows %}
+                <tr>
+                    <td>{{ row.label }}</td>
+                    <td class="text-end money-positive">₹{{ row.cash_in|money }}</td>
+                    <td class="text-end money-negative">₹{{ row.cash_out|money }}</td>
+                    <td class="text-end {% if row.net > 0 %}money-positive{% elif row.net < 0 %}money-negative{% endif %}">
+                        {% if row.net < 0 %}-{% endif %}₹{{ row.net|abs|money }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
