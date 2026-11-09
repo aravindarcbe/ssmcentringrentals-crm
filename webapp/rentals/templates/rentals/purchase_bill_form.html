@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}New Purchase Bill - {{ company_name }}{% endblock %}
+{% block page_title %}New Purchase Bill{% endblock %}
+{% block content %}
+
+<form method="post" class="card">
+    {% csrf_token %}
+    <div class="card-body">
+        {{ form.non_field_errors }}
+        {{ formset.non_form_errors }}
+        <h5 class="card-title mb-3">Bill details</h5>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Vendor</label>
+                {{ form.vendor_name }}
+                {{ form.vendor_name.errors }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Date</label>
+                {{ form.date }}
+                {{ form.date.errors }}
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Remarks</label>
+                {{ form.remarks }}
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <input type="file" id="pdf-input" accept="application/pdf" class="d-none">
+            <button type="button" id="import-pdf-btn" class="btn btn-sm btn-outline-secondary">
+                <i data-lucide="file-up"></i> Import items from a PDF bill
+            </button>
+            <span id="import-pdf-status" class="text-muted small"></span>
+        </div>
+
+        <h5 class="card-title mb-3">Line items</h5>
+        {{ formset.management_form }}
+        <div class="table-responsive mb-2">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:18%">Category</th>
+                        <th style="width:14%">Size</th>
+                        <th style="width:22%">Description / notes</th>
+                        <th style="width:10%">Count</th>
+                        <th style="width:12%">Rate</th>
+                        <th style="width:14%">Amount</th>
+                        <th style="width:10%">Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="line-items-body">
+                    {% for lf in formset %}
+                    <tr class="line-item-row">
+                        <td>{{ lf.category }}</td>
+                        <td>{{ lf.size_label }}</td>
+                        <td>{{ lf.description }}</td>
+                        <td>{{ lf.count }}</td>
+                        <td>{{ lf.rate }}</td>
+                        <td>{{ lf.amount }}</td>
+                        <td class="text-center">{{ lf.DELETE }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button type="button" id="add-row-btn" class="btn btn-sm btn-outline-primary mb-2">
+            <i data-lucide="plus"></i> Add line item
+        </button>
+    </div>
+    <div class="card-footer bg-white d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i data-lucide="check"></i> Save purchase bill</button>
+        <a href="{% url 'rentals:purchase_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+</form>
+
+<!-- PDF review popup: shows what was auto-read from the uploaded bill, editable
+     before anything is added to the form above (see docs/change-requests-2026-11.md §2). -->
+<div class="modal fade" id="pdf-review-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Review items read from the PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">
+                    This is a best-effort reading of the PDF — check and fix anything wrong below
+                    (especially Category, which can't be guessed) before adding these to the bill.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Bill date (read from the PDF, if found)</label>
+                    <input type="date" id="pdf-review-date" class="form-control" style="max-width:220px">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width:20%">Category</th>
+                                <th style="width:30%">Description</th>
+                                <th style="width:14%">Count</th>
+                                <th style="width:16%">Rate</th>
+                                <th style="width:16%">Amount</th>
+                                <th style="width:4%"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="pdf-review-body"></tbody>
+                    </table>
+                </div>
+                <p id="pdf-review-empty" class="text-muted small d-none">
+                    Nothing readable was found in that PDF — add line items manually below instead.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="pdf-review-ok" class="btn btn-primary">OK, add these items</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var tbody = document.getElementById('line-items-body');
+    var totalForms = document.getElementById('id_items-TOTAL_FORMS');
+
+    function addRow(prefill) {
+        var rows = tbody.querySelectorAll('.line-item-row');
+        var lastRow = rows[rows.length - 1];
+        var newIndex = parseInt(totalForms.value, 10);
+        var newRow = lastRow.cloneNode(true);
+
+        newRow.querySelectorAll('input, select').forEach(function (el) {
+            var name = el.getAttribute('name');
+            if (!name) return;
+            var newName = name.replace(/items-(\d+)-/, 'items-' + newIndex + '-');
+            el.setAttribute('name', newName);
+            el.setAttribute('id', 'id_' + newName);
+            if (el.type === 'checkbox') {
+                el.checked = false;
+                return;
+            }
+            el.value = '';
+            if (!prefill) return;
+            var field = (el.getAttribute('name') || '').replace(/items-\d+-/, '');
+            if (field in prefill && prefill[field] !== null && prefill[field] !== undefined) {
+                el.value = prefill[field];
+            }
+        });
+
+        tbody.appendChild(newRow);
+        totalForms.value = newIndex + 1;
+        return newRow;
+    }
+
+    document.getElementById('add-row-btn').addEventListener('click', function () {
+        addRow(null);
+    });
+
+    // --- PDF import ---
+    var pdfInput = document.getElementById('pdf-input');
+    var importBtn = document.getElementById('import-pdf-btn');
+    var statusEl = document.getElementById('import-pdf-status');
+    var reviewBody = document.getElementById('pdf-review-body');
+    var reviewEmpty = document.getElementById('pdf-review-empty');
+    var reviewDate = document.getElementById('pdf-review-date');
+    var reviewModalEl = document.getElementById('pdf-review-modal');
+    var reviewModal = new bootstrap.Modal(reviewModalEl);
+
+    importBtn.addEventListener('click', function () { pdfInput.click(); });
+
+    pdfInput.addEventListener('change', function () {
+        var file = pdfInput.files[0];
+        if (!file) return;
+        statusEl.textContent = 'Reading ' + file.name + '…';
+
+        var data = new FormData();
+        data.append('file', file);
+        var csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch("{% url 'rentals:purchase_pdf_parse' %}", {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            body: data,
+        })
+            .then(function (resp) { return resp.json(); })
+            .then(function (result) {
+                statusEl.textContent = '';
+                pdfInput.value = '';
+                if (result.error) {
+                    statusEl.textContent = result.error;
+                    return;
+                }
+                showReview(result);
+            })
+            .catch(function () {
+                statusEl.textContent = "Couldn't read that file.";
+                pdfInput.value = '';
+            });
+    });
+
+    function showReview(result) {
+        reviewBody.innerHTML = '';
+        reviewDate.value = result.date || '';
+        var items = result.items || [];
+        reviewEmpty.classList.toggle('d-none', items.length > 0);
+
+        items.forEach(function (item) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td><select class="form-select form-select-sm rv-category">' +
+                '<option value="">—</option>' +
+                {% for c in categories %}'<option value="{{ c.pk }}">{{ c.name }}</option>' +{% endfor %}
+                '</select></td>' +
+                '<td><input class="form-control form-control-sm rv-description" value="' + escapeAttr(item.description || '') + '"></td>' +
+                '<td><input type="number" step="1" min="1" class="form-control form-control-sm rv-count" value="' + (item.count || 1) + '"></td>' +
+                '<td><input type="number" step="0.01" class="form-control form-control-sm rv-rate" value="' + (item.rate != null ? item.rate : '') + '"></td>' +
+                '<td><input type="number" step="0.01" class="form-control form-control-sm rv-amount" value="' + (item.amount != null ? item.amount : '') + '"></td>' +
+                '<td><button type="button" class="btn btn-sm btn-outline-secondary rv-remove">&times;</button></td>';
+            tr.querySelector('.rv-remove').addEventListener('click', function () { tr.remove(); });
+            reviewBody.appendChild(tr);
+        });
+
+        reviewModal.show();
+    }
+
+    function escapeAttr(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    document.getElementById('pdf-review-ok').addEventListener('click', function () {
+        var dateVal = reviewDate.value;
+        if (dateVal) {
+            document.getElementById('{{ form.date.id_for_label }}').value = dateVal;
+        }
+        reviewBody.querySelectorAll('tr').forEach(function (tr) {
+            addRow({
+                category: tr.querySelector('.rv-category').value,
+                size_label: '',
+                description: tr.querySelector('.rv-description').value,
+                count: tr.querySelector('.rv-count').value,
+                rate: tr.querySelector('.rv-rate').value,
+                amount: tr.querySelector('.rv-amount').value,
+            });
+        });
+        reviewModal.hide();
+    });
+});
+</script>
+
+{% endblock %}

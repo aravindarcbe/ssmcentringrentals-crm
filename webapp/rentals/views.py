@@ -8,13 +8,15 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required as _staff_member_required
 from django.db import transaction
 from django.db.models import Sum, F, Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 
 from .excel_import import run_import, ExcelImportError
+from .purchase_pdf_import import parse_purchase_pdf
 from .forms import (
     RentalTransactionForm,
     RentalLineItemFormSet,
@@ -24,6 +26,8 @@ from .forms import (
     ReceiptForm,
     PaymentForm,
     ProductPurchaseForm,
+    PurchaseBillForm,
+    ProductPurchaseLineItemFormSet,
     DailyExpenseForm,
     ExcelUploadForm,
 )
@@ -37,6 +41,7 @@ from .models import (
     Payment,
     DailyExpense,
     ProductPurchase,
+    PurchaseBill,
     DepositLedger,
     StockMovement,
 )
@@ -176,6 +181,7 @@ _DANGER_RESET_MODELS = [
     RentalTransaction,
     Payment,
     ProductPurchase,
+    PurchaseBill,
     DailyExpense,
     Material,
     MaterialCategory,
@@ -212,6 +218,16 @@ def _generate_invoice_number():
         if m:
             max_n = max(max_n, int(m.group(1)))
     return f"SSM/INV/{max_n + 1:04d}"
+
+
+def _generate_bill_number():
+    existing = PurchaseBill.objects.filter(bill_number__regex=r"^SSM/PUR/\d+$")
+    max_n = 0
+    for b in existing:
+        m = re.match(r"^SSM/PUR/(\d+)$", b.bill_number)
+        if m:
+            max_n = max(max_n, int(m.group(1)))
+    return f"SSM/PUR/{max_n + 1:04d}"
 
 
 def _to_decimal(value):
@@ -580,6 +596,60 @@ class PaymentDeleteView(HtmxDeleteMixin, DeleteView):
     success_url = reverse_lazy("rentals:payment_list")
 
 
+@staff_member_required
+def purchase_bill_new(request):
+    if request.method == "POST":
+        form = PurchaseBillForm(request.POST)
+        formset = ProductPurchaseLineItemFormSet(request.POST, queryset=ProductPurchase.objects.none(), prefix="items")
+        if form.is_valid() and formset.is_valid():
+            line_forms = [
+                lf for lf in formset
+                if lf.cleaned_data and not lf.cleaned_data.get("DELETE") and lf.cleaned_data.get("category")
+            ]
+            if not line_forms:
+                messages.error(request, "Add at least one line item.")
+            else:
+                bill = form.save(commit=False)
+                bill.bill_number = _generate_bill_number()
+                bill.save()
+
+                for line_form in line_forms:
+                    line = line_form.save(commit=False)
+                    line.bill = bill
+                    line.date = bill.date
+                    line.save()
+
+                messages.success(request, f"Purchase bill {bill.bill_number} saved with {len(line_forms)} item(s).")
+                return redirect("rentals:purchase_list")
+    else:
+        form = PurchaseBillForm(initial={"date": date.today()})
+        formset = ProductPurchaseLineItemFormSet(queryset=ProductPurchase.objects.none(), prefix="items")
+
+    return render(request, "rentals/purchase_bill_form.html", {
+        "form": form,
+        "formset": formset,
+        "categories": MaterialCategory.objects.all(),
+    })
+
+
+@staff_member_required
+@require_POST
+def purchase_pdf_parse_view(request):
+    """AJAX endpoint: best-effort text extraction from an uploaded vendor PDF bill
+    (see purchase_pdf_import.py). Always 200s with whatever it could find — the
+    caller shows the result in an editable review popup, never saves it directly."""
+    uploaded = request.FILES.get("file")
+    if not uploaded:
+        return JsonResponse({"error": "No file uploaded."}, status=400)
+    try:
+        result = parse_purchase_pdf(uploaded)
+    except Exception:
+        return JsonResponse(
+            {"error": "Couldn't read that PDF — make sure it's a valid, unprotected .pdf file."}, status=400
+        )
+    return JsonResponse(result)
+
+
 @method_decorator(staff_member_required, name="dispatch")
 class ProductPurchaseListView(HtmxRowsMixin, ListView):
     model = ProductPurchase
@@ -589,19 +659,17 @@ class ProductPurchaseListView(HtmxRowsMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = ProductPurchase.objects.select_related("category")
+        qs = ProductPurchase.objects.select_related("category", "bill")
         query = (self.request.GET.get("q") or "").strip()
         if query:
-            qs = qs.filter(category__name__icontains=query) | qs.filter(size_label__icontains=query)
+            qs = (
+                qs.filter(category__name__icontains=query)
+                | qs.filter(size_label__icontains=query)
+                | qs.filter(description__icontains=query)
+                | qs.filter(bill__bill_number__icontains=query)
+                | qs.filter(bill__vendor_name__icontains=query)
+            )
         return qs
-
-
-@method_decorator(staff_member_required, name="dispatch")
-class ProductPurchaseCreateView(CreateView):
-    model = ProductPurchase
-    form_class = ProductPurchaseForm
-    template_name = "rentals/purchase_form.html"
-    success_url = reverse_lazy("rentals:purchase_list")
 
 
 @method_decorator(staff_member_required, name="dispatch")

@@ -22,6 +22,7 @@ from rentals.models import (
     Receipt,
     Payment,
     ProductPurchase,
+    PurchaseBill,
     DailyExpense,
 )
 
@@ -302,6 +303,7 @@ def run_import(wb):
     # ---------------------------------------------------------------
     ws = wb["Product purchase"]
     purchases_created = 0
+    bill_seq = PurchaseBill.objects.filter(bill_number__startswith="SSM/PUR/IMPORT-").count()
     for row in ws.iter_rows(min_row=5, values_only=True):
         row = (row + (None,) * 6)[:6]
         date_val, category, size, count, rate, amount = row
@@ -309,7 +311,16 @@ def run_import(wb):
         if not parsed_date or not category or count is None:
             continue
         computed_amount = amount if amount is not None else ((count * rate) if rate else 0)
+        bill_seq += 1
+        # The source sheet has no bill-grouping column (one row per line item),
+        # so each imported row becomes its own single-line bill.
+        bill = PurchaseBill.objects.create(
+            bill_number=f"SSM/PUR/IMPORT-{bill_seq:04d}",
+            date=parsed_date,
+            remarks="Imported from the owner's Excel tracker.",
+        )
         ProductPurchase.objects.create(
+            bill=bill,
             date=parsed_date,
             category=get_or_create_category(category.strip()),
             size_label=(size or "").strip() if isinstance(size, str) else "",
