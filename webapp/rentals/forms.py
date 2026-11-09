@@ -61,9 +61,10 @@ class CustomerForm(forms.ModelForm):
 class MaterialCategoryForm(forms.ModelForm):
     class Meta:
         model = MaterialCategory
-        fields = ["name"]
+        fields = ["name", "default_rate_unit"]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
+            "default_rate_unit": forms.Select(attrs={"class": "form-select"}),
         }
 
 

@@ -2,12 +2,13 @@
     <div class="card">
         <table>
             <thead>
-                <tr><th>Name</th><th></th></tr>
+                <tr><th>Name</th><th>Rate Unit</th><th></th></tr>
             </thead>
             <tbody>
                 {% for c in categories %}
                 <tr>
                     <td>{{ c.name }}</td>
+                    <td>{{ c.get_default_rate_unit_display }}</td>
                     <td class="text-end">
                         <a href="{% url 'rentals:category_edit' c.pk %}" class="btn btn-sm btn-icon btn-outline-secondary" title="Edit"><i data-lucide="pencil"></i></a>
                         <button type="button" class="btn btn-sm btn-icon btn-outline-secondary text-danger" title="Delete"
@@ -17,7 +18,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="2" class="text-center text-muted py-4">No categories yet.</td></tr>
+                <tr><td colspan="3" class="text-center text-muted py-4">No categories yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
