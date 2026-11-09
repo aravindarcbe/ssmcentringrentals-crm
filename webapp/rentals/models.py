@@ -9,6 +9,25 @@ PAYMENT_MODE_CHOICES = [
     ("BANK", "Bank transfer"),
 ]
 
+# RATE_UNIT_FLAT_FT is the legacy/default behavior (ft_value * rate * count, no day
+# multiplier) — matches the already-resolved billing formula in spec.md §3.1, so
+# every existing Material/RentalLineItem keeps computing the same amount it always
+# did. The other units are new, opt-in, and actually factor in days_estimated.
+RATE_UNIT_FLAT_FT = "FLAT_FT"
+RATE_UNIT_PIECE_DAY = "PIECE_DAY"
+RATE_UNIT_FT_DAY = "FT_DAY"
+RATE_UNIT_PIECE_20D = "PIECE_20D"
+RATE_UNIT_FT_20D = "FT_20D"
+RATE_UNIT_PIECE_30D = "PIECE_30D"
+RATE_UNIT_CHOICES = [
+    (RATE_UNIT_FLAT_FT, "Per ft (flat — existing default)"),
+    (RATE_UNIT_PIECE_DAY, "Per piece / day"),
+    (RATE_UNIT_FT_DAY, "Per ft / day"),
+    (RATE_UNIT_PIECE_20D, "Per piece / 20 days"),
+    (RATE_UNIT_FT_20D, "Per ft / 20 days"),
+    (RATE_UNIT_PIECE_30D, "Per piece / 30 days"),
+]
+
 
 class Customer(models.Model):
     TYPE_CONTRACTOR = "CONTRACTOR"
@@ -57,6 +76,10 @@ class Material(models.Model):
     size_label = models.CharField(max_length=100, help_text='e.g. "12 inch 8 ft"')
     ft_value = models.DecimalField(max_digits=8, decimal_places=2, help_text="Length in feet, used in bill amount calc")
     default_rate_per_day = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    rate_unit = models.CharField(
+        max_length=12, choices=RATE_UNIT_CHOICES, default=RATE_UNIT_FLAT_FT,
+        help_text="How the rate is quoted — prefills new rental line items for this material",
+    )
     total_stock_count = models.PositiveIntegerField(default=0)
     available_count = models.PositiveIntegerField(default=0)
 
@@ -83,6 +106,7 @@ class RentalTransaction(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     transportation = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Transportation charge shown on the invoice")
+    damage_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Charge for damaged materials, shown on the invoice")
     remarks = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -119,10 +143,10 @@ class RentalTransaction(models.Model):
 
     @property
     def grand_total(self):
-        """Subtotal + Transportation, as shown on the printed invoice (§6 of
-        docs/change-requests-2026-11.md) — not part of net_position's own
-        deposit/balance math, which is unchanged."""
-        return self.invoice_subtotal + self.transportation
+        """Subtotal + Transportation + Damage charge, as shown on the printed
+        invoice (§6/§7 of docs/change-requests-2026-11.md) — not part of
+        net_position's own deposit/balance math, which is unchanged."""
+        return self.invoice_subtotal + self.transportation + self.damage_charge
 
 
 class RentalLineItem(models.Model):
@@ -131,6 +155,7 @@ class RentalLineItem(models.Model):
     count = models.PositiveIntegerField()
     days_estimated = models.PositiveIntegerField(default=1)
     rate = models.DecimalField(max_digits=10, decimal_places=2)
+    rate_unit = models.CharField(max_length=12, choices=RATE_UNIT_CHOICES, default=RATE_UNIT_FLAT_FT)
     count_returned = models.PositiveIntegerField(default=0)
     date_returned = models.DateField(null=True, blank=True)
     days_actual = models.PositiveIntegerField(null=True, blank=True)
@@ -140,8 +165,26 @@ class RentalLineItem(models.Model):
 
     @property
     def line_amount(self):
-        """Matches the source sheet convention: Ft x Rate x Count."""
-        return (self.material.ft_value or 0) * self.rate * self.count
+        """Bill amount, fixed at creation time (days_estimated, not actual return
+        days — see spec.md §3.1). FLAT_FT reproduces the original, always-resolved
+        formula (Ft x Rate x Count, no day multiplier) so nothing created before
+        rate units existed changes. The other units actually factor in days."""
+        from math import ceil
+
+        ft = self.material.ft_value or 0
+        days = self.days_estimated or 1
+
+        if self.rate_unit == RATE_UNIT_PIECE_DAY:
+            return self.rate * self.count * days
+        if self.rate_unit == RATE_UNIT_FT_DAY:
+            return self.rate * ft * self.count * days
+        if self.rate_unit == RATE_UNIT_PIECE_20D:
+            return self.rate * self.count * ceil(days / 20)
+        if self.rate_unit == RATE_UNIT_FT_20D:
+            return self.rate * ft * self.count * ceil(days / 20)
+        if self.rate_unit == RATE_UNIT_PIECE_30D:
+            return self.rate * self.count * ceil(days / 30)
+        return ft * self.rate * self.count  # RATE_UNIT_FLAT_FT
 
     @property
     def is_fully_returned(self):

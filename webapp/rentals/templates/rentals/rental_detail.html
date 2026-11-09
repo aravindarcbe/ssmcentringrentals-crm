@@ -23,7 +23,7 @@
             <div class="table-responsive">
                 <table class="table table-sm mb-0 align-middle">
                     <thead>
-                        <tr><th>Material</th><th>Count</th><th>Rate</th><th>Line amount</th><th>Returned</th></tr>
+                        <tr><th>Material</th><th>Count</th><th>Rate</th><th>Rate unit</th><th>Line amount</th><th>Returned</th></tr>
                     </thead>
                     <tbody>
                         {% for item in t.line_items.all %}
@@ -31,6 +31,7 @@
                             <td>{{ item.material }}</td>
                             <td>{{ item.count }}</td>
                             <td>₹{{ item.rate|money }}</td>
+                            <td class="text-muted small">{{ item.get_rate_unit_display }}</td>
                             <td>₹{{ item.line_amount|money }}</td>
                             <td>
                                 {% if item.is_fully_returned %}
@@ -46,7 +47,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="fw-semibold">
-                            <td colspan="3" class="text-end">Total bill</td>
+                            <td colspan="4" class="text-end">Total bill</td>
                             <td colspan="2">₹{{ t.total_bill_amount|money }}</td>
                         </tr>
                     </tfoot>
@@ -106,6 +107,8 @@
                         {% else %}<span class="pill pill-secondary">{{ t.get_status_display }}</span>{% endif %}
                     </dd>
                     <dt class="col-6">Discount</dt><dd class="col-6">₹{{ t.discount|money }}</dd>
+                    <dt class="col-6">Transportation</dt><dd class="col-6">₹{{ t.transportation|money }}</dd>
+                    <dt class="col-6">Damage charge</dt><dd class="col-6">₹{{ t.damage_charge|money }}</dd>
                     <dt class="col-6">Deposit collected</dt><dd class="col-6">₹{{ t.total_deposit_collected|money }}</dd>
                     <dt class="col-6">Deposit refunded</dt><dd class="col-6">₹{{ t.total_deposit_refunded|money }}</dd>
                     <dt class="col-6">Received (receipts)</dt><dd class="col-6">₹{{ t.total_received|money }}</dd>
