@@ -230,6 +230,16 @@ def _generate_bill_number():
     return f"SSM/PUR/{max_n + 1:04d}"
 
 
+def _generate_customer_id():
+    existing = Customer.objects.filter(customer_id__regex=r"^SSM-CUS-\d+$")
+    max_n = 0
+    for c in existing:
+        m = re.match(r"^SSM-CUS-(\d+)$", c.customer_id)
+        if m:
+            max_n = max(max_n, int(m.group(1)))
+    return f"SSM-CUS-{max_n + 1:04d}"
+
+
 def _to_decimal(value):
     try:
         return Decimal(value)
@@ -454,7 +464,12 @@ class CustomerListView(HtmxRowsMixin, ListView):
         )
         query = (self.request.GET.get("q") or "").strip()
         if query:
-            qs = qs.filter(name__icontains=query) | qs.filter(phone__icontains=query) | qs.filter(place__icontains=query)
+            qs = (
+                qs.filter(name__icontains=query)
+                | qs.filter(phone__icontains=query)
+                | qs.filter(place__icontains=query)
+                | qs.filter(customer_id__icontains=query)
+            )
         return qs
 
 
@@ -464,6 +479,10 @@ class CustomerCreateView(CreateView):
     form_class = CustomerForm
     template_name = "rentals/customer_form.html"
     success_url = reverse_lazy("rentals:customer_list")
+
+    def form_valid(self, form):
+        form.instance.customer_id = _generate_customer_id()
+        return super().form_valid(form)
 
 
 @method_decorator(staff_member_required, name="dispatch")

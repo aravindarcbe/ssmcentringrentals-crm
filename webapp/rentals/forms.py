@@ -40,11 +40,20 @@ class DepositCollectedForm(forms.Form):
 class CustomerForm(forms.ModelForm):
     class Meta:
         model = Customer
-        fields = ["name", "phone", "place", "aadhar_number"]
+        fields = [
+            "name", "phone", "place", "address", "pincode",
+            "construction_site_address", "customer_type", "payment_terms",
+            "aadhar_number",
+        ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "form-control"}),
             "phone": forms.TextInput(attrs={"class": "form-control"}),
             "place": forms.TextInput(attrs={"class": "form-control"}),
+            "address": forms.TextInput(attrs={"class": "form-control"}),
+            "pincode": forms.TextInput(attrs={"class": "form-control"}),
+            "construction_site_address": forms.TextInput(attrs={"class": "form-control"}),
+            "customer_type": forms.Select(attrs={"class": "form-select"}),
+            "payment_terms": forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Rent ₹500/day, Advance ₹5000"}),
             "aadhar_number": forms.TextInput(attrs={"class": "form-control"}),
         }
 
