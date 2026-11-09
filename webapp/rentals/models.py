@@ -62,6 +62,10 @@ class Customer(models.Model):
 
 class MaterialCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    default_rate_unit = models.CharField(
+        max_length=12, choices=RATE_UNIT_CHOICES, default=RATE_UNIT_FLAT_FT,
+        help_text="Prefills the rate unit when adding a new material under this category",
+    )
 
     class Meta:
         verbose_name_plural = "Material categories"
