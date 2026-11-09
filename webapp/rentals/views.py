@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import partial
 
@@ -54,16 +54,53 @@ from .models import (
 staff_member_required = partial(_staff_member_required, login_url="rentals:login")
 
 
+def _resolve_dashboard_period(request):
+    """Returns (label, date_from, date_to) for the dashboard's period filter.
+    'month' (the original fixed behavior) stays the default."""
+    today = date.today()
+    period = request.GET.get("period", "month")
+
+    if period == "today":
+        return "Today", today, today
+    if period == "yesterday":
+        y = today - timedelta(days=1)
+        return "Yesterday", y, y
+    if period == "week":
+        start = today - timedelta(days=today.weekday())  # Monday
+        return "This Week", start, today
+    if period == "last_month":
+        this_month_start = today.replace(day=1)
+        last_month_end = this_month_start - timedelta(days=1)
+        return last_month_end.strftime("%B %Y"), last_month_end.replace(day=1), last_month_end
+    if period == "fy":
+        fy_start_year = today.year if today.month >= 4 else today.year - 1
+        start = date(fy_start_year, 4, 1)
+        return f"FY {fy_start_year}-{str(fy_start_year + 1)[2:]}", start, today
+    if period == "custom":
+        try:
+            start = datetime.strptime(request.GET.get("from", ""), "%Y-%m-%d").date()
+        except ValueError:
+            start = today.replace(day=1)
+        try:
+            end = datetime.strptime(request.GET.get("to", ""), "%Y-%m-%d").date()
+        except ValueError:
+            end = today
+        return "Custom range", start, end
+
+    return today.strftime("%B %Y"), today.replace(day=1), today  # "month", the default
+
+
 @staff_member_required
 def dashboard(request):
     today = date.today()
-    month_start = today.replace(day=1)
+    period_label, period_start, period_end = _resolve_dashboard_period(request)
+    selected_period = request.GET.get("period", "month")
 
-    cash_in = Receipt.objects.filter(date__gte=month_start).aggregate(total=Sum("amount"))["total"] or 0
+    cash_in = Receipt.objects.filter(date__gte=period_start, date__lte=period_end).aggregate(total=Sum("amount"))["total"] or 0
 
-    payments_out = Payment.objects.filter(date__gte=month_start).aggregate(total=Sum("amount"))["total"] or 0
-    expenses_out = DailyExpense.objects.filter(date__gte=month_start).aggregate(total=Sum("amount"))["total"] or 0
-    purchases_out = ProductPurchase.objects.filter(date__gte=month_start).aggregate(total=Sum("amount"))["total"] or 0
+    payments_out = Payment.objects.filter(date__gte=period_start, date__lte=period_end).aggregate(total=Sum("amount"))["total"] or 0
+    expenses_out = DailyExpense.objects.filter(date__gte=period_start, date__lte=period_end).aggregate(total=Sum("amount"))["total"] or 0
+    purchases_out = ProductPurchase.objects.filter(date__gte=period_start, date__lte=period_end).aggregate(total=Sum("amount"))["total"] or 0
     cash_out = payments_out + expenses_out + purchases_out
 
     receipts_today = Receipt.objects.filter(date=today).aggregate(total=Sum("amount"))["total"] or 0
@@ -119,7 +156,19 @@ def dashboard(request):
         "today": today,
         "low_stock_materials": low_stock_materials,
         "recent_transactions": recent_transactions,
-        "month_label": month_start.strftime("%B %Y"),
+        "month_label": period_label,
+        "selected_period": selected_period,
+        "custom_from": request.GET.get("from", ""),
+        "custom_to": request.GET.get("to", ""),
+        "periods": [
+            ("today", "Today"),
+            ("yesterday", "Yesterday"),
+            ("week", "This Week"),
+            ("month", "This Month"),
+            ("last_month", "Last Month"),
+            ("fy", "Financial Year"),
+            ("custom", "Custom Date"),
+        ],
     }
     return render(request, "rentals/dashboard.html", context)
 
@@ -240,10 +289,24 @@ def reports_view(request):
 
     expense_breakdown = DailyExpense.objects.values("category").annotate(total=Sum("amount")).order_by("-total")
 
+    # Material-wise rental report (all-time) — line_amount is a computed property
+    # (depends on rate_unit), not a DB column, so this is built in Python like the
+    # other custom breakdowns above rather than a .annotate(Sum(...)).
+    material_totals = {}
+    for line in RentalLineItem.objects.select_related("material", "material__category"):
+        entry = material_totals.setdefault(line.material, {"count": 0, "amount": 0})
+        entry["count"] += line.count
+        entry["amount"] += line.line_amount
+    material_rows = sorted(
+        ({"material": m, "count": d["count"], "amount": d["amount"]} for m, d in material_totals.items()),
+        key=lambda r: r["amount"], reverse=True,
+    )
+
     context = {
         "pending_rows": pending_rows,
         "refund_rows": refund_rows,
         "deposit_rows": deposit_rows,
+        "material_rows": material_rows,
         "monthly_rows": monthly_rows,
         "expense_breakdown": expense_breakdown,
     }
