@@ -1,9 +1,14 @@
 {% load static text_filters %}
 <div class="brand">
-    {# Placeholder logo icon (rentals/static/rentals/img/logo.svg) - swap that file for a real #}
-    {# logo any time; the name text stays separate and comes from the COMPANY_NAME setting. #}
     <div class="brand-logo"><img src="{% static 'rentals/img/logo.svg' %}" alt="{{ company_name }} logo"></div>
-    <div class="brand-name">{{ company_name }}</div>
+    <div class="brand-name">
+        <div class="brand-name-main">Sri Sai Murugan</div>
+        <div class="brand-name-sub">Centring Rentals</div>
+        <div class="brand-tagline">
+            <span class="pill pill-brand-navy pill-xs">Right Material</span>
+            <span class="pill pill-brand-green pill-xs">Right Price</span>
+        </div>
+    </div>
 </div>
 <nav class="flex-grow-1 py-2">
     <div class="nav-section-label">Overview</div>

@@ -7,7 +7,7 @@
     {% load static %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
             --ink: #1a1a1a;
@@ -23,8 +23,9 @@
         .login-card { width: 360px; background: #fff; border: 1px solid var(--border); border-radius: 0.6rem; padding: 2rem 1.75rem; text-align: center; }
         .login-logo { width: 48px; height: 48px; border-radius: 0.6rem; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; }
         .login-logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 0.5rem; }
-        .login-title { font-weight: 600; font-size: 1.05rem; }
-        .login-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+        .login-title { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.35rem; color: var(--brand-navy); letter-spacing: 0.01em; }
+        .login-title-sub { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--brand-green); text-transform: uppercase; margin-top: 0.2rem; }
+        .login-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.6rem; }
         .pill { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
         .pill-brand-navy { background: var(--brand-navy); color: #fff; }
         .pill-brand-green { background: var(--brand-green); color: #fff; }
@@ -41,7 +42,8 @@
 <body>
     <div class="login-card">
         <div class="login-logo"><img src="{% static 'rentals/img/logo.svg' %}" alt="{{ company_name }} logo"></div>
-        <div class="login-title">{{ company_name }}</div>
+        <div class="login-title">Sri Sai Murugan</div>
+        <div class="login-title-sub">&mdash; Centring Rentals &mdash;</div>
         <div class="login-sub">Sign in to continue</div>
         <div style="margin: 0.6rem 0 1.1rem">
             <span class="pill pill-brand-navy">Right Material</span>
