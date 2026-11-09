@@ -6,6 +6,7 @@
     <title>{{ t.invoice_number }} - Invoice</title>
     {% load static currency_filters %}
     <link rel="icon" type="image/png" href="{% static 'rentals/img/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'rentals/img/apple-touch-icon.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -24,6 +25,11 @@
         .btn-print {
             background: var(--brand-navy); color: #fff; border: none; border-radius: 0.4rem;
             padding: 0.55rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        }
+        .btn-whatsapp {
+            background: #25D366; color: #fff; border: none; border-radius: 0.4rem;
+            padding: 0.55rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center;
         }
         .transport-box {
             max-width: 820px; margin: 0.75rem auto 0; background: #fff; border: 1px solid var(--border);
@@ -121,9 +127,14 @@
 <body>
     <div class="toolbar">
         <a href="{% url 'rentals:rental_detail' t.pk %}">&larr; Back to rental</a>
-        <button type="button" class="btn-print" onclick="window.print()">
-            Print invoice / Save as PDF
-        </button>
+        <div style="display:flex; gap:0.6rem">
+            <a href="{{ whatsapp_url }}" target="_blank" rel="noopener" class="btn-whatsapp">
+                Share on WhatsApp
+            </a>
+            <button type="button" class="btn-print" onclick="window.print()">
+                Print invoice / Save as PDF
+            </button>
+        </div>
     </div>
 
     <form method="post" class="transport-box">

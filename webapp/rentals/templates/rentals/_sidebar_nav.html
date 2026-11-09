@@ -49,6 +49,9 @@
     </a>
 
     <div class="nav-section-label">All sections</div>
+    <a class="nav-link {% if '/reports/' in request.path %}active{% endif %}" href="{% url 'rentals:reports' %}" title="Reports">
+        <i data-lucide="bar-chart-3"></i> <span class="nav-label">Reports</span>
+    </a>
     <a class="nav-link {% if request.path == '/manage/' %}active{% endif %}" href="{% url 'rentals:manage' %}" title="Manage">
         <i data-lucide="layout-grid"></i> <span class="nav-label">Manage</span>
     </a>
