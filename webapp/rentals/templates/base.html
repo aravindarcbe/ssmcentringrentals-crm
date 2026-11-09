@@ -204,6 +204,24 @@
         .topbar .user-pill { padding: 0.35rem 0.8rem 0.35rem 0.35rem; gap: 0.6rem; }
         .topbar .user-pill .user-avatar { width: 34px; height: 34px; font-size: 0.9rem; }
         .topbar .user-pill .small { font-size: 0.88rem; }
+
+        /* A bare DELETE checkbox on a formset row reads as unlabeled and unclear
+           (confirmed confusing in real use) — pair it with a trash icon + tooltip
+           so it's obvious what checking it does. */
+        .remove-line-toggle {
+            display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer;
+            color: #a41c1c; margin: 0;
+        }
+        .remove-line-toggle input { cursor: pointer; }
+        .remove-line-toggle svg { width: 15px; height: 15px; }
+
+        .pill-filter {
+            display: inline-block; padding: 0.3rem 0.8rem; border-radius: 1rem;
+            font-size: 0.8rem; font-weight: 500; color: #44464a;
+            background: #fff; border: 1px solid var(--border); text-decoration: none;
+        }
+        .pill-filter:hover { background: var(--sidebar-active-bg); color: var(--ink); }
+        .pill-filter.active { background: var(--brand-navy); border-color: var(--brand-navy); color: #fff; }
     </style>
 </head>
 <body>
