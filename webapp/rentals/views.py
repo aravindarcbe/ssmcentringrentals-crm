@@ -65,6 +65,11 @@ def dashboard(request):
     purchases_out = ProductPurchase.objects.filter(date__gte=month_start).aggregate(total=Sum("amount"))["total"] or 0
     cash_out = payments_out + expenses_out + purchases_out
 
+    receipts_today = Receipt.objects.filter(date=today).aggregate(total=Sum("amount"))["total"] or 0
+    receipts_month = cash_in
+    payments_today = Payment.objects.filter(date=today).aggregate(total=Sum("amount"))["total"] or 0
+    payments_month = payments_out
+
     deposits_collected = DepositLedger.objects.aggregate(total=Sum("amount_collected"))["total"] or 0
     deposits_refunded = DepositLedger.objects.aggregate(total=Sum("amount_refunded"))["total"] or 0
     deposits_held = deposits_collected - deposits_refunded
@@ -83,12 +88,34 @@ def dashboard(request):
 
     recent_transactions = RentalTransaction.objects.select_related("customer").order_by("-date_out", "-id")[:10]
 
+    # Material due back this month: due_date is computed (date_out + days_estimated),
+    # not stored, so filter in Python rather than at the DB level — the open-line-item
+    # set is small for this business, so this stays cheap.
+    open_lines = (
+        RentalLineItem.objects.exclude(transaction__status=RentalTransaction.STATUS_CLOSED)
+        .exclude(count_returned=F("count"))
+        .select_related("transaction__customer", "material")
+    )
+    due_this_month = sorted(
+        (
+            line for line in open_lines
+            if line.due_date.year == today.year and line.due_date.month == today.month
+        ),
+        key=lambda line: line.due_date,
+    )
+
     context = {
         "cash_in": cash_in,
         "cash_out": cash_out,
+        "receipts_today": receipts_today,
+        "receipts_month": receipts_month,
+        "payments_today": payments_today,
+        "payments_month": payments_month,
         "deposits_held": deposits_held,
         "pending_from_customers": pending_from_customers,
         "refunds_owed_to_customers": refunds_owed_to_customers,
+        "due_this_month": due_this_month,
+        "today": today,
         "low_stock_materials": low_stock_materials,
         "recent_transactions": recent_transactions,
         "month_label": month_start.strftime("%B %Y"),

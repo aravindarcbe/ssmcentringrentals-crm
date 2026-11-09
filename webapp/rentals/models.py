@@ -135,6 +135,13 @@ class RentalLineItem(models.Model):
     def is_fully_returned(self):
         return self.count_returned >= self.count
 
+    @property
+    def due_date(self):
+        """Expected return date — date_out + days_estimated. Not stored; computed
+        the same way line_amount is, so there's nothing to keep in sync."""
+        from datetime import timedelta
+        return self.transaction.date_out + timedelta(days=self.days_estimated)
+
 
 class DepositLedger(models.Model):
     transaction = models.ForeignKey(RentalTransaction, on_delete=models.CASCADE, related_name="deposit_entries")
