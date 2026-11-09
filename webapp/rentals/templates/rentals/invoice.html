@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ t.invoice_number }} - Invoice</title>
+    {% load static currency_filters %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #1a1a1a; --text-muted: #6d7175; --border: #d7d9db;
+            --brand-navy: #1a3a6b; --brand-green: #4c9a2a;
+        }
+        * { box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { margin: 0; background: #e9eaec; color: var(--ink); font-size: 13px; }
+
+        .toolbar {
+            max-width: 820px; margin: 0 auto; padding: 1rem 1.25rem 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .toolbar a { color: var(--text-muted); font-size: 0.85rem; text-decoration: none; }
+        .btn-print {
+            background: var(--brand-navy); color: #fff; border: none; border-radius: 0.4rem;
+            padding: 0.55rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        }
+        .transport-box {
+            max-width: 820px; margin: 0.75rem auto 0; background: #fff; border: 1px solid var(--border);
+            border-radius: 0.5rem; padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.75rem;
+        }
+        .transport-box label { font-size: 0.8rem; color: var(--text-muted); }
+        .transport-box input { width: 120px; border: 1px solid var(--border); border-radius: 0.3rem; padding: 0.3rem 0.5rem; }
+        .transport-box button {
+            background: var(--brand-navy); color: #fff; border: none; border-radius: 0.3rem;
+            padding: 0.3rem 0.7rem; font-size: 0.8rem; cursor: pointer;
+        }
+
+        .sheet {
+            max-width: 820px; margin: 1rem auto 2rem; background: #fff; position: relative; overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+        }
+
+        .header { position: relative; background: var(--brand-navy); height: 92px; overflow: hidden; }
+        .header .diagonal {
+            position: absolute; top: 0; right: 0; width: 55%; height: 100%; background: var(--brand-green);
+            clip-path: polygon(38% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+
+        .brand-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 1.5rem 0.5rem; gap: 1rem; }
+        .brand-left { display: flex; align-items: center; gap: 0.85rem; }
+        .brand-logo { width: 58px; height: 58px; flex-shrink: 0; }
+        .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+        .brand-name-main { font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 1.35rem; color: var(--brand-navy); line-height: 1.15; }
+        .brand-name-sub { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.1em; color: var(--brand-green); text-transform: uppercase; margin-top: 0.1rem; }
+        .brand-pills { margin-top: 0.35rem; display: flex; gap: 0.3rem; }
+        .pill { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 1rem; font-size: 0.62rem; font-weight: 700; color: #fff; }
+        .pill-navy { background: var(--brand-navy); }
+        .pill-green { background: var(--brand-green); }
+
+        .brand-right { text-align: right; font-size: 0.72rem; color: var(--ink); max-width: 230px; }
+        .brand-right .row { display: flex; justify-content: flex-end; align-items: flex-start; gap: 0.35rem; margin-bottom: 0.3rem; }
+        .brand-right strong { font-weight: 600; }
+
+        .invoice-title { text-align: center; font-family: 'Playfair Display', Georgia, serif; color: var(--brand-navy); font-size: 1.25rem; font-weight: 700; margin: 0.9rem 0 0.75rem; letter-spacing: 0.04em; }
+
+        .meta-row { display: flex; justify-content: space-between; padding: 0 1.5rem; gap: 1rem; margin-bottom: 0.9rem; }
+        .meta-box { display: flex; align-items: center; gap: 0.5rem; border-radius: 0.3rem; overflow: hidden; border: 1px solid var(--border); }
+        .meta-box .label { padding: 0.35rem 0.7rem; font-size: 0.72rem; font-weight: 700; color: #fff; white-space: nowrap; }
+        .meta-box.navy .label { background: var(--brand-navy); }
+        .meta-box.green .label { background: var(--brand-green); }
+        .meta-box .value { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+
+        .cust-block { padding: 0 1.5rem; margin-bottom: 0.9rem; }
+        .cust-row { display: flex; gap: 0.5rem; font-size: 0.82rem; margin-bottom: 0.4rem; }
+        .cust-row .k { font-weight: 700; width: 130px; flex-shrink: 0; }
+        .cust-row .v { border-bottom: 1px solid var(--border); flex-grow: 1; padding-bottom: 0.15rem; }
+
+        table.items { width: calc(100% - 3rem); margin: 0 1.5rem 0.9rem; border-collapse: collapse; }
+        table.items th {
+            background: var(--brand-navy); color: #fff; font-size: 0.72rem; text-transform: uppercase;
+            padding: 0.5rem 0.6rem; text-align: left; letter-spacing: 0.03em;
+        }
+        table.items th:nth-child(3), table.items th:nth-child(4), table.items th:nth-child(5) { background: var(--brand-green); text-align: right; }
+        table.items td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+        table.items td:nth-child(3), table.items td:nth-child(4), table.items td:nth-child(5) { text-align: right; }
+        table.items tbody tr:nth-child(even) { background: #f7f8f9; }
+
+        .totals-wrap { display: flex; justify-content: flex-end; padding: 0 1.5rem; margin-bottom: 1.1rem; }
+        .totals { width: 260px; font-size: 0.82rem; }
+        .totals .row { display: flex; justify-content: space-between; padding: 0.3rem 0; }
+        .totals .grand { background: var(--brand-green); color: #fff; font-weight: 700; border-radius: 0.3rem; padding: 0.45rem 0.7rem; margin-top: 0.3rem; }
+
+        .foot-row { display: flex; justify-content: space-between; padding: 0 1.5rem 1.5rem; gap: 1.5rem; }
+        .terms { font-size: 0.72rem; color: var(--ink); max-width: 320px; }
+        .terms .title { font-weight: 700; color: var(--brand-green); margin-bottom: 0.3rem; }
+        .terms ol { margin: 0; padding-left: 1.1rem; }
+        .terms li { margin-bottom: 0.15rem; }
+        .sign { text-align: center; font-size: 0.72rem; margin-top: 2.2rem; }
+        .sign .line { border-top: 1px solid var(--ink); width: 150px; margin: 0 auto 0.3rem; }
+        .sign-right { text-align: right; }
+        .sign-right .for-line { font-size: 0.72rem; font-weight: 700; color: var(--brand-green); margin-bottom: 2.2rem; }
+
+        .footer-band {
+            background: var(--brand-navy); color: #fff; text-align: center; padding: 0.6rem; font-size: 0.78rem; font-weight: 600;
+            position: relative; overflow: hidden;
+        }
+        .footer-band .diagonal {
+            position: absolute; top: 0; left: 0; width: 45%; height: 100%; background: var(--brand-green);
+            clip-path: polygon(0 0, 65% 0, 35% 100%, 0 100%);
+        }
+        .footer-band span { position: relative; z-index: 1; }
+
+        @media print {
+            body { background: #fff; }
+            .toolbar, .transport-box { display: none; }
+            .sheet { box-shadow: none; margin: 0; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <a href="{% url 'rentals:rental_detail' t.pk %}">&larr; Back to rental</a>
+        <button type="button" class="btn-print" onclick="window.print()">
+            Print invoice / Save as PDF
+        </button>
+    </div>
+
+    <form method="post" class="transport-box">
+        {% csrf_token %}
+        <label for="transportation-input">Transportation charge</label>
+        <input type="number" step="0.01" min="0" id="transportation-input" name="transportation" value="{{ t.transportation }}">
+        <button type="submit">Update</button>
+        <span style="color:var(--text-muted);font-size:0.78rem">Edit this, then print — it's included in the Grand Total below.</span>
+    </form>
+
+    <div class="sheet">
+        <div class="header"><div class="diagonal"></div></div>
+
+        <div class="brand-row">
+            <div class="brand-left">
+                <div class="brand-logo"><img src="{% static 'rentals/img/logo.svg' %}" alt="logo"></div>
+                <div>
+                    <div class="brand-name-main">Sri Sai Murugan</div>
+                    <div class="brand-name-sub">Centring Rentals</div>
+                    <div class="brand-pills">
+                        <span class="pill pill-navy">Right Material</span>
+                        <span class="pill pill-green">Right Price</span>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-right">
+                <div class="row"><strong>86676 26718 &nbsp;|&nbsp; 86088 15512</strong></div>
+                <div class="row">5/5, Srinivasa Nagar Main Road, Karanai, Thazhambur &ndash; 600130</div>
+            </div>
+        </div>
+
+        <div class="invoice-title">INVOICE</div>
+
+        <div class="meta-row">
+            <div class="meta-box navy">
+                <span class="label">Invoice No.</span>
+                <span class="value">{{ t.invoice_number }}</span>
+            </div>
+            <div class="meta-box green">
+                <span class="label">Date</span>
+                <span class="value">{{ t.date_out|date:"d / m / Y" }}</span>
+            </div>
+        </div>
+
+        <div class="cust-block">
+            <div class="cust-row"><div class="k">Customer Name</div><div class="v">{{ t.customer.name }}</div></div>
+            <div class="cust-row"><div class="k">Contact Number</div><div class="v">{{ t.customer.phone }}</div></div>
+            <div class="cust-row"><div class="k">Site Location</div><div class="v">{{ t.customer.construction_site_address|default:t.customer.place }}</div></div>
+        </div>
+
+        <table class="items">
+            <thead>
+                <tr><th>S.No</th><th>Description</th><th>Qty</th><th>Rate (₹)</th><th>Amount (₹)</th></tr>
+            </thead>
+            <tbody>
+                {% for item in t.line_items.all %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.material }}</td>
+                    <td>{{ item.count }}</td>
+                    <td>{{ item.rate|money }}</td>
+                    <td>{{ item.line_amount|money }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals-wrap">
+            <div class="totals">
+                <div class="row"><span>Subtotal</span><span>₹{{ t.invoice_subtotal|money }}</span></div>
+                <div class="row"><span>Transportation</span><span>₹{{ t.transportation|money }}</span></div>
+                <div class="row grand"><span>Grand Total</span><span>₹{{ t.grand_total|money }}</span></div>
+            </div>
+        </div>
+
+        <div class="foot-row">
+            <div>
+                <div class="terms">
+                    <div class="title">Terms &amp; Conditions</div>
+                    <ol>
+                        <li>Material should be returned in good condition.</li>
+                        <li>Transportation charges extra if applicable.</li>
+                        <li>Damaged materials will be charged separately.</li>
+                        <li>Rental period as agreed.</li>
+                    </ol>
+                </div>
+                <div class="sign">
+                    <div class="line"></div>
+                    Customer Signature
+                </div>
+            </div>
+            <div class="sign-right">
+                <div class="for-line">For Sri Sai Murugan Centring Rentals</div>
+                <div class="line" style="margin-left:auto"></div>
+                Authorized Signature
+            </div>
+        </div>
+
+        <div class="footer-band"><div class="diagonal"></div><span>86676 26718 &nbsp;|&nbsp; 86088 15512</span></div>
+    </div>
+</body>
+</html>

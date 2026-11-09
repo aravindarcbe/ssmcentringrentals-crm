@@ -350,6 +350,20 @@ def rental_detail(request, pk):
 
 
 @staff_member_required
+def rental_invoice(request, pk):
+    transaction = get_object_or_404(
+        RentalTransaction.objects.select_related("customer").prefetch_related("line_items__material"),
+        pk=pk,
+    )
+    if request.method == "POST":
+        transaction.transportation = _to_decimal(request.POST.get("transportation"))
+        transaction.save(update_fields=["transportation"])
+        messages.success(request, "Transportation charge updated.")
+        return redirect("rentals:rental_invoice", pk=transaction.pk)
+    return render(request, "rentals/invoice.html", {"t": transaction})
+
+
+@staff_member_required
 def rental_return(request, pk):
     transaction = get_object_or_404(RentalTransaction, pk=pk)
     line_items = list(transaction.line_items.select_related("material"))

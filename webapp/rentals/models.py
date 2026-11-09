@@ -82,6 +82,7 @@ class RentalTransaction(models.Model):
     date_out = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    transportation = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Transportation charge shown on the invoice")
     remarks = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -111,6 +112,17 @@ class RentalTransaction(models.Model):
     def net_position(self):
         """Positive = refund due to customer, negative = balance due from customer."""
         return (self.total_deposit_collected - self.total_deposit_refunded) - self.total_bill_amount - self.discount
+
+    @property
+    def invoice_subtotal(self):
+        return self.total_bill_amount - self.discount
+
+    @property
+    def grand_total(self):
+        """Subtotal + Transportation, as shown on the printed invoice (§6 of
+        docs/change-requests-2026-11.md) — not part of net_position's own
+        deposit/balance math, which is unchanged."""
+        return self.invoice_subtotal + self.transportation
 
 
 class RentalLineItem(models.Model):
